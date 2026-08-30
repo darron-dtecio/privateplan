@@ -66,6 +66,113 @@ def _age(path: Path) -> str | None:
     return f"{hours}h ago" if hours else f"{delta.seconds // 60}m ago"
 
 
+def _newer(a: Path, b: Path) -> bool:
+    """True when a was written after b — i.e. a is not stale against its input."""
+    return a.exists() and b.exists() and a.stat().st_mtime >= b.stat().st_mtime
+
+
+def _profile_gaps() -> list[str]:
+    """Fields the profile still needs, live rather than as of the last analyze.
+
+    Imported lazily: analyze pulls in the whole model stack, and the workspace
+    page should not pay for that on every request that does not need it.
+    """
+    profile = common.migrate_profile(common.load_json(common.PROFILE_PATH)) or {}
+    if not profile:
+        return []
+    try:
+        import analyze
+        return analyze.check_completeness(profile)
+    except Exception:
+        return []
+
+
+def _portfolio_step() -> dict:
+    """The per-holding stock analysis — a real stage, but an optional one.
+
+    It is off the critical path: the plan is complete without it, and it takes
+    minutes because it runs the SEC analyzer over every company you hold. So it
+    carries its own state like any other stage but never becomes "the next thing
+    to do", which would tell a first-time user to sit through it before seeing a
+    plan they already have.
+    """
+    page = FIN_DATA / "portfolio.html"
+    data = FIN_DATA / "portfolio.json"
+    detail = "runs the SEC-backed analyzer over every holding — several minutes"
+    if data.exists():
+        p = common.load_json(data) or {}
+        held = len(p.get("stocks") or []) + len(p.get("funds") or [])
+        failed = len(p.get("failed") or [])
+        detail = (f"{held} holding(s) analysed"
+                  + (f", {failed} could not be" if failed else ""))
+        if not _newer(page, common.PROFILE_PATH):
+            detail += " — out of date, your holdings changed since"
+    return {"id": "portfolio", "label": "Portfolio analysis", "step": "portfolio",
+            "href": "/finance/portfolio" if page.exists() else None,
+            "optional": True,
+            "done": _newer(page, common.PROFILE_PATH),
+            "detail": detail, "when": _age(page)}
+
+
+def _pipeline_steps(inbox_files: list[dict], summary: dict) -> list[dict]:
+    """The pipeline as a path with a state per stage, not a table of timestamps.
+
+    It is a linear five-step flow, plus the optional portfolio analysis at the
+    end. Presented as a status table beside seven equally weighted buttons,
+    nothing tells a first-time user which one to press — so each step carries
+    its own state and the page promotes exactly one.
+    """
+    routed = [f for f in inbox_files if f.get("pipeline")]
+    unrouted = len(inbox_files) - len(routed)
+    gaps = _profile_gaps()
+    steps = [
+        {"id": "documents", "label": "Documents", "step": None,
+         "done": bool(inbox_files),
+         "detail": (f"{len(inbox_files)} file(s) in the inbox" if inbox_files
+                    else "nothing to read yet — add documents below"),
+         "when": _age(INBOX) if inbox_files else None},
+        {"id": "extract", "label": "Extract", "step": "extract",
+         "done": (EXTRACTED / "summary.json").exists(),
+         "detail": (f"{len(routed)} routed"
+                    + (f", {unrouted} unrecognised" if unrouted else "")
+                    if (EXTRACTED / "summary.json").exists()
+                    else "reads each document into structured fields"),
+         "when": _age(EXTRACTED / "summary.json")},
+        {"id": "profile", "label": "Review profile", "step": None,
+         "href": "/finance/intake",
+         "done": common.PROFILE_PATH.exists() and not gaps,
+         "detail": (f"{len(gaps)} field(s) still needed" if gaps
+                    else "everything the documents cannot know is filled in"
+                    if common.PROFILE_PATH.exists()
+                    else "add what documents cannot know"),
+         "when": _age(common.PROFILE_PATH)},
+        {"id": "analyze", "label": "Analyze", "step": "analyze",
+         "done": _newer(common.ANALYSIS_PATH, common.PROFILE_PATH),
+         "detail": ("out of date — the profile changed since"
+                    if common.ANALYSIS_PATH.exists()
+                    and not _newer(common.ANALYSIS_PATH, common.PROFILE_PATH)
+                    else "projection, Monte Carlo, tax, Social Security, fees"),
+         "when": _age(common.ANALYSIS_PATH)},
+        {"id": "render", "label": "Render dashboard", "step": "render",
+         "href": "/finance/dashboard" if common.DASHBOARD_PATH.exists() else None,
+         "done": _newer(common.DASHBOARD_PATH, common.ANALYSIS_PATH),
+         "detail": ("out of date — the analysis changed since"
+                    if common.DASHBOARD_PATH.exists()
+                    and not _newer(common.DASHBOARD_PATH, common.ANALYSIS_PATH)
+                    else "builds the page you read the plan on"),
+         "when": _age(common.DASHBOARD_PATH)},
+        _portfolio_step(),
+    ]
+    # Exactly one step is "current": the first thing on the required path that
+    # is not finished. An optional stage never claims it.
+    current = next((s for s in steps if not s["done"] and not s.get("optional")), None)
+    for s in steps:
+        s["state"] = ("done" if s["done"]
+                      else "current" if s is current
+                      else "optional" if s.get("optional") else "pending")
+    return steps
+
+
 # State options come from the shipped tax tables, so adding a state file is
 # all it takes to offer it here -- see docs/ADDING_A_STATE.md.
 _STATE_OPTIONS = ",".join(f"{code}|{name} ({code})"
@@ -402,31 +509,40 @@ def home():
         meta = extracted_by_name.get(p.name) or {}
         analyzed = analyzed_by_hash.get(meta.get("sha256")) or {}
         matched = meta.get("same_structure_as") or []
+        pipeline = meta.get("pipeline")
+        # One row, one plain state. The five columns it replaces — format,
+        # pipeline, extracted, included, integration check — asked the reader to
+        # reconcile them into exactly this sentence.
+        if pipeline and analyzed.get("included_at"):
+            state, state_cls = "in the plan", "good"
+        elif pipeline:
+            state, state_cls = "read, not yet analysed", "warn"
+        elif meta.get("extracted_at"):
+            state, state_cls = "not used", "warn"
+        else:
+            state, state_cls = "not read yet", ""
+        kind = (pipeline or "").replace("_", " ")
+        detail = ", ".join(filter(None, [
+            kind or (meta.get("format") or "unrecognised format"),
+            (f"{len(matched)} structural match(es)" if matched else None),
+            (f"dedupe: {meta.get('dedupe_strategy')}" if meta.get("dedupe_strategy") else None),
+            f"{p.stat().st_size // 1024} KB",
+        ]))
         inbox_files.append({"name": p.name, "kb": p.stat().st_size // 1024,
                             "format": meta.get("format"),
-                            "pipeline": meta.get("pipeline"),
+                            "pipeline": pipeline,
                             "extracted_at": shown_time(meta.get("extracted_at")),
                             "included_at": shown_time(analyzed.get("included_at")),
                             "matched": len(matched),
+                            "state": state, "state_cls": state_cls, "detail": detail,
                             "dedupe": meta.get("dedupe_strategy")})
     extracted = sorted(p.name for p in EXTRACTED.glob("*.json"))
-    status = [
-        {"label": "Source documents (inbox)", "state": f"{len(inbox_files)} file(s)",
-         "ok": bool(inbox_files)},
-        {"label": "Extraction", "state": _age(EXTRACTED / "summary.json") or "not run",
-         "ok": (EXTRACTED / "summary.json").exists()},
-        {"label": "Profile (intake form)", "state": _age(common.PROFILE_PATH) or "not saved",
-         "ok": common.PROFILE_PATH.exists()},
-        {"label": "Analysis", "state": _age(common.ANALYSIS_PATH) or "not run",
-         "ok": common.ANALYSIS_PATH.exists()},
-        {"label": "Dashboard", "state": _age(common.DASHBOARD_PATH) or "not rendered",
-         "ok": common.DASHBOARD_PATH.exists()},
-        {"label": "Portfolio (per-stock analysis)",
-         "state": _age(FIN_DATA / "portfolio.html") or "not built",
-         "ok": (FIN_DATA / "portfolio.html").exists()},
-    ]
+    steps = _pipeline_steps(inbox_files, summary)
+    next_step = next((s for s in steps if s["state"] == "current"), None)
     running = any(j["proc"].poll() is None for j in FIN_JOBS.values())
-    return render_template("finance.html.j2", inbox=inbox_files, status=status,
+    return render_template("finance.html.j2", inbox=inbox_files, steps=steps,
+                           next_step=next_step,
+                           portfolio_age=_age(FIN_DATA / "portfolio.html"),
                            extracted=extracted, links_exists=common.LINKS_PATH.exists(),
                            running=running,
                            has_dashboard=common.DASHBOARD_PATH.exists(),

@@ -20,6 +20,9 @@ MODULES = ["common", "taxdata", "mortgage", "socsec", "tax", "projection", "web"
 # invoked bare, so their synthetic checks live behind a flag
 SELFTEST_ARGS = {"analyze": ["--selftest"], "extract": ["--selftest"],
                  "samples": ["--selftest"], "download": ["--selftest"]}
+# Stock-pipeline modules that carry a self-test of their own. They live outside
+# finance/ but this is the gate CONTRIBUTING points people at, so they run here.
+PIPELINE_MODULES = {"narrate": ["--selftest"], "edgar": ["--selftest"]}
 
 
 def pii_lint() -> list[str]:
@@ -49,6 +52,16 @@ def main() -> int:
             print(r.stdout[-2000:])
             print(r.stderr[-2000:])
             failed.append(mod)
+    for mod, extra in PIPELINE_MODULES.items():
+        r = subprocess.run([sys.executable, str(HERE.parent / "pipeline" / f"{mod}.py")]
+                           + extra, capture_output=True, text=True, cwd=HERE.parent)
+        ok = r.returncode == 0
+        print(f"[{'OK' if ok else 'FAIL'}] pipeline/{mod}")
+        if not ok:
+            print(r.stdout[-2000:])
+            print(r.stderr[-2000:])
+            failed.append(f"pipeline/{mod}")
+
     problems = pii_lint()
     for pb in problems:
         print(f"[FAIL] pii-lint: {pb}")

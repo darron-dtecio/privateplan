@@ -1,46 +1,82 @@
 {% extends "_base.html.j2" %}
 {% block title %}Personal Finance — workspace{% endblock %}
 {% block heading %}Personal Finance{% endblock %}
-{% block subheading %}<a href="/">← home</a> · <a href="/stocks">stock analysis</a>
-{% if has_dashboard %} · <a href="/finance/dashboard">open dashboard</a>{% endif %}
- · all data stays in <code>finance_data/</code> (gitignored, local){% endblock %}
+{% block subheading %}All data stays in <code>finance_data/</code> — gitignored, local,
+never uploaded.{% endblock %}
+
+{% block crumbs %}
+<div class="crumbs">
+  <span class="here">Workspace</span><span class="sep">/</span>
+  <a href="/finance/intake">Intake</a><span class="sep">/</span>
+  {% if has_dashboard %}<a href="/finance/dashboard">Dashboard</a>{% else %}<span class="mut">Dashboard</span>{% endif %}<span class="sep">/</span>
+  {% if has_portfolio %}<a href="/finance/portfolio">Portfolio</a>{% else %}<span class="mut">Portfolio</span>{% endif %}
+  <span class="sep">/</span><a href="/stocks">Stock analysis</a>
+</div>
+{% endblock %}
 
 {% block content %}
 <div class="card">
-  <h2>Pipeline status</h2>
-  <table>
-    <tr><th>Stage</th><th>Status</th></tr>
-    {% for s in status %}
-    <tr>
-      <td>{{ s.label }}</td>
-      <td>{% if s.ok %}<span class="badge ok">{{ s.state }}</span>{% else %}<span class="badge miss">{{ s.state }}</span>{% endif %}</td>
-    </tr>
+  <div class="headline">
+    <div>
+      <h2>{% if next_step %}Next: {{ next_step.label|lower }}{% else %}Your plan is up to date{% endif %}</h2>
+      <p class="sub" style="margin:0">{% if next_step %}{{ next_step.detail }}{% else %}
+        Every step has run against the current profile.{% endif %}</p>
+    </div>
+    {% if next_step %}
+      {% if next_step.href %}<a class="btn" href="{{ next_step.href }}">{{ next_step.label }} →</a>
+      {% elif next_step.step %}<button type="button" data-step="{{ next_step.step }}">{{ next_step.label }} →</button>
+      {% endif %}
+    {% elif has_dashboard %}<a class="btn" href="/finance/dashboard">Open dashboard →</a>{% endif %}
+  </div>
+
+  <div class="steps">
+    {% for s in steps %}
+    <div class="step {{ s.state }}">
+      <div class="name"><span class="dot"></span>{{ s.label }}</div>
+      <div class="detail">{{ s.detail }}</div>
+      {% if s.state == 'current' %}<div class="when">you are here</div>
+      {% elif s.when %}<div class="when">{{ s.when }}{% if s.optional %} · optional{% endif %}</div>
+      {% elif s.optional %}<div class="when">optional</div>{% endif %}
+      {% if s.href and s.state != 'current' %}<a href="{{ s.href }}">open</a>{% endif %}
+    </div>
     {% endfor %}
-  </table>
-  {% if running %}<p class="mut" style="margin:8px 0 0"><span class="badge run">a job is running</span></p>{% endif %}
+  </div>
+
+  <div class="runrow">
+    <span class="cap">Run by hand</span>
+    <button type="button" data-step="download" class="ghost">Download from links</button>
+    <button type="button" data-step="extract" class="ghost">Extract documents</button>
+    <button type="button" data-step="analyze" class="ghost">Analyze</button>
+    <button type="button" data-step="render" class="ghost">Render dashboard</button>
+    <button type="button" data-step="prices" class="ghost">↻ Update prices</button>
+    <button type="button" data-step="portfolio" class="ghost">Analyze portfolio <span style="font-weight:500;color:var(--muted)">· several min</span></button>
+    <button type="button" data-step="portfolio-render" class="ghost">Rebuild portfolio view</button>
+  </div>
+  <p class="mut" style="margin:8px 0 0"><b>Update prices</b> fetches a live quote for every holding and rebuilds both dashboards on it, so net worth, allocation and the projection move with the market instead of sitting at the statement date.</p>
+  <p class="mut" style="margin:8px 0 0"><b>Analyze portfolio</b> runs the SEC-backed stock analyzer against every individual company you hold and then builds the combined view{% if portfolio_age %} — last built {{ portfolio_age }}{% endif %}.</p>
+  <div class="progress" id="progress"><span></span></div>
+  <p class="mut" id="status" style="margin:10px 0 6px">{% if running %}<span class="badge run">a job is running</span>{% endif %}</p>
+  <pre id="log"></pre>
 </div>
 
 <div class="card">
-  <h2>1 · Source documents</h2>
+  <h2>Source documents</h2>
   {% if uploaded or duplicates %}<p class="sub">
     {% if uploaded %}{{ uploaded }} new document{{ '' if uploaded == 1 else 's' }} structurally checked and extracted.{% endif %}
     {% if duplicates %}{{ duplicates }} exact duplicate{{ '' if duplicates == 1 else 's' }} skipped.{% endif %}
   </p>{% endif %}
   {% if inbox %}
-  <div style="overflow-x:auto">
-  <table>
-    <tr><th>File</th><th>Pipeline</th><th>Extracted</th><th>Included in analysis</th><th>Integration check</th></tr>
-    {% for f in inbox %}<tr>
-      <td class="mut">{{ f.name }} <span class="sub">({{ f.kb }} KB)</span></td>
-      <td>{{ f.format or 'pending' }}{% if f.pipeline %} · {{ f.pipeline|replace('_', ' ') }}{% endif %}</td>
-      <td>{{ f.extracted_at or 'pending' }}</td>
-      <td>{{ f.included_at or 'not yet' }}</td>
-      <td>{% if f.pipeline %}<span class="badge ok">routed</span>
-        <span class="sub">{{ f.matched }} structural match{{ '' if f.matched == 1 else 'es' }}{% if f.dedupe %}; dedupe: {{ f.dedupe }}{% endif %}</span>
-        {% else %}<span class="badge miss">pending</span>{% endif %}</td>
-    </tr>{% endfor %}
-  </table>
+  {% for f in inbox %}
+  <div class="doc">
+    <div>
+      <div class="name">{{ f.name }}</div>
+      <div class="detail">{{ f.detail }}</div>
+    </div>
+    <span class="stat {{ f.state_cls }}">{{ f.state }}</span>
   </div>
+  {% endfor %}
+  <p class="mut" style="margin:10px 0 0">A document reads as <b>not used</b> when no
+    layout matched it — nothing was taken from it, and nothing in the plan depends on it.</p>
   {% else %}
   <p class="sub">No documents yet. Either paste OneDrive share links below and hit
   <b>Download</b>, or download the files yourself and upload them here.</p>
@@ -56,38 +92,9 @@
   </form>
 </div>
 
-<div class="card">
-  <h2>2 · Run steps</h2>
-  <div class="btnrow">
-    <button type="button" data-step="download" class="ghost">Download from links</button>
-    <button type="button" data-step="extract">Extract documents</button>
-    <button type="button" data-step="analyze">Analyze</button>
-    <button type="button" data-step="render">Render dashboard</button>
-    <button type="button" data-step="prices" class="ghost">↻ Update prices</button>
-    <button type="button" data-step="portfolio" class="ghost">Analyze portfolio (slow)</button>
-    <button type="button" data-step="portfolio-render" class="ghost">Rebuild portfolio view</button>
-  </div>
-  <p class="mut" style="margin:8px 0 0"><b>Update prices</b> fetches a live quote for every holding and rebuilds both dashboards on it, so net worth, allocation and the projection move with the market instead of sitting at the statement date.</p>
-  <p class="mut" style="margin:8px 0 0"><b>Analyze portfolio</b> runs the SEC-backed stock analyzer against every individual company you hold and then builds the combined view — expect several minutes.</p>
-  <p class="mut" id="status" style="margin:10px 0 6px"></p>
-  <pre id="log"></pre>
-</div>
-
-<div class="card">
-  <h2>3 · Review &amp; complete your profile</h2>
-  <p class="sub">After extraction, verify every number and add what documents can't know
-  (account balances, spending, spouse info) — nothing sensitive ever leaves this machine.</p>
-  <div class="btnrow">
-    <a class="btn" href="/finance/intake">Open intake form{% if has_profile %} (saved){% endif %}</a>
-    {% if has_dashboard %}<a class="btn" href="/finance/dashboard" style="background:var(--s3)">Open dashboard</a>{% endif %}
-    {% if has_portfolio %}<a class="btn" href="/finance/portfolio" style="background:var(--s4)">Open portfolio view</a>{% endif %}
-  </div>
-</div>
-
 <div class="note">
-  Flow: <b>Download</b> (or upload) → <b>Extract</b> → review in the <b>intake form</b> →
-  <b>Analyze</b> → <b>Render</b>. Extraction logs show only field names and confidence —
-  never values — so they're safe to share when troubleshooting.
+  Extraction logs show only field names and confidence — never values — so they're
+  safe to share when troubleshooting.
 </div>
 
 {% if request.args.get('reset') %}
@@ -144,10 +151,14 @@
 (function () {
   var statusEl = document.getElementById('status');
   var logEl = document.getElementById('log');
+  var progressEl = document.getElementById('progress');
   var buttons = document.querySelectorAll('[data-step]');
   var timer = null;
 
-  function setBusy(b) { buttons.forEach(function (btn) { btn.disabled = b; }); }
+  function setBusy(b) {
+    buttons.forEach(function (btn) { btn.disabled = b; });
+    if (progressEl) progressEl.style.display = b ? 'block' : 'none';
+  }
 
   function poll(jobId) {
     fetch('/finance/job/' + jobId).then(function (r) { return r.json(); }).then(function (j) {
@@ -157,10 +168,13 @@
       if (j.status === 'running') {
         statusEl.textContent = 'Running ' + j.step + '…';
         timer = setTimeout(function () { poll(jobId); }, 1500);
+      } else if (j.status === 'done') {
+        // The step changed what every state on this page is derived from, so
+        // the page fetches its own new state rather than asking to be reloaded.
+        statusEl.textContent = j.step + ' finished — refreshing…';
+        setTimeout(function () { location.reload(); }, 1200);
       } else {
-        statusEl.textContent = j.status === 'done'
-          ? j.step + ' finished. Reload the page to refresh status.'
-          : j.step + ' FAILED (exit ' + j.returncode + ') — see log above.';
+        statusEl.textContent = j.step + ' FAILED (exit ' + j.returncode + ') — see log above.';
         setBusy(false);
       }
     }).catch(function () {

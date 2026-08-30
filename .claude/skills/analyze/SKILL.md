@@ -14,6 +14,21 @@ Funds and ETFs take a different pipeline (no fundamentals, no forecast) but end
 the same way: **every instrument gets its findings written to its own
 dashboard**, never left in the chat reply alone.
 
+**The coded pipeline already writes a narrative.** `pipeline/narrate.py` runs at
+the end of `fetch.py` and `bulk.py` and writes a rule-based `narrative.json`
+from the fetched numbers — growth and its trend, margins, cash generation
+against capex, the balance sheet, where consensus stops and the model starts,
+the scraped sentiment — so a dashboard is complete without this skill. It marks
+itself `"method": "rules"` and the dashboard says so.
+
+What that floor cannot do is what this skill is for: reading the press release
+and the call, researching the quarter, judging whether guidance contradicts the
+model, and writing a story rather than a summation. So when you run /analyze,
+**overwrite the rule-based narrative** — step 5 replaces it, and the dashboard's
+"written from the fetched numbers" note disappears with it, which is how you
+know the replacement landed. Never leave a rule-based narrative in place and
+report the ticker as analysed.
+
 Python interpreter (shared venv, always use this exact path):
 `python`
 
@@ -214,7 +229,9 @@ Every instrument you analyse ends with its findings written into
 here, funds and ETFs in step 5b. An analysis that exists only in the chat
 reply is not finished: the dashboard is the artifact that survives the session.
 
-Write `data/<TICKER>/narrative.json` (plain text values, no markdown):
+Write `data/<TICKER>/narrative.json` (plain text values, no markdown), replacing
+the rule-based one `fetch.py` wrote. Omit `method` — its absence is what tells
+the dashboard this narrative was researched rather than computed:
 
 ```json
 {
@@ -277,12 +294,11 @@ Fund/ETF:
 python pipeline\fund_render.py <SYMBOL>
 ```
 
-Re-render even when `bulk.py` or `fetch.py` already did: that render ran before
-`narrative.json` and any `assumptions_override.json` existed, so the dashboard
-is missing the headline, thesis, risks and catalysts until this second pass.
-The renderer says so — a fund render logs "no narrative.json yet" when it wrote
-a dashboard with data but no findings. Treat that line in your own output as a
-step you have not finished.
+Re-render even when `bulk.py` or `fetch.py` already did: that render ran against
+the rule-based narrative and before any `assumptions_override.json` existed, so
+the dashboard still carries the computed findings rather than yours until this
+second pass. Check the rendered page: if it still says "Written from the fetched
+numbers by `pipeline/narrate.py`", your narrative did not land.
 
 Single ticker: report the dashboard path and a short summary of the analysis.
 

@@ -38,6 +38,99 @@ def signed_money(v: float | None, dec: int = 2) -> str:
     return ("+" if v >= 0 else "") + money(v, dec)
 
 
+# The two success-probability thresholds. They decide the colour of the headline
+# number, so the page draws them on a scale rather than leaving the reader to
+# guess what amber meant.
+PROB_COMFORTABLE, PROB_AT_RISK = 0.85, 0.70
+
+# Which numbers stop being answers when a profile field is missing. A banner at
+# the top saying "some figures are placeholders" is only useful if the figures
+# themselves say which ones they are.
+GAP_LABELS = {
+    "spending.retirement_monthly_today": "Retirement spending",
+    "spending.current_monthly": "Current monthly spending",
+    "household.self_birthdate": "Your birthdate",
+    "home.value": "Home market value",
+    "income.salary_annual": "Salary",
+}
+GAP_TARGETS = {
+    "spending.retirement_monthly_today": (
+        {"success", "headroom"}, {"answer", "plan", "markets"}),
+    "spending.current_monthly": (
+        {"savings_rate", "surplus"}, {"today", "spending"}),
+    "household.self_birthdate": ({"to_retirement"}, {"plan"}),
+    "home.value": ({"net_worth"}, {"today"}),
+    "income.salary_annual": ({"savings_rate", "net_worth"}, {"today", "plan"}),
+}
+
+
+def parse_gaps(raw: list[str]) -> list[dict]:
+    """Split analyze.py's gap strings back into path, reason and severity.
+
+    They are written as "MISSING (required) <path> — <why>", which reads fine in
+    a log and not at all in a list the user is meant to act on.
+    """
+    gaps = []
+    for text in raw:
+        head, _, why = text.partition(" — ")
+        path = head.rsplit(") ", 1)[-1].strip()
+        gaps.append({"text": text, "path": path, "why": why or text,
+                     "required": text.startswith("MISSING (required)"),
+                     "label": GAP_LABELS.get(path, path)})
+    return gaps
+
+
+def gap_targets(gaps: list[dict]) -> tuple[set, set]:
+    """The tile keys and section ids that a missing field turns into estimates."""
+    tiles: set[str] = set()
+    sections: set[str] = set()
+    for g in gaps:
+        t, s = GAP_TARGETS.get(g["path"], (set(), set()))
+        tiles |= t
+        sections |= s
+    return tiles, sections
+
+
+def build_verdict(prob: float, n: int, sustainable: float, desired: float | None,
+                  est: bool) -> dict:
+    """The one thing the reader opened the page to find out, as a sentence.
+
+    Six tiles of equal weight leave them to work out which number is the answer;
+    this states it, says where it sits against the thresholds, and names the
+    lever that moves it.
+    """
+    headroom = sustainable - (desired or 0)
+    if prob >= PROB_COMFORTABLE:
+        cls, band = "good", "comfortable"
+        standing = (f"That is at or above the {PROB_COMFORTABLE:.0%} this model "
+                    f"treats as comfortable.")
+    elif prob >= PROB_AT_RISK:
+        cls, band = "warn", "tight"
+        standing = (f"That is short of the {PROB_COMFORTABLE:.0%} this model treats "
+                    f"as comfortable, though clear of the {PROB_AT_RISK:.0%} it "
+                    f"treats as at risk.")
+    else:
+        cls, band = "bad", "at risk"
+        standing = (f"That is below the {PROB_AT_RISK:.0%} this model treats as "
+                    f"at risk.")
+    if headroom < 0:
+        lever = (f"The gap is spending, not returns: the plan asks for "
+                 f"${desired or 0:,.0f}/mo and supports ${sustainable:,.0f}/mo.")
+    else:
+        lever = (f"Spending has room: the plan asks for ${desired or 0:,.0f}/mo "
+                 f"and supports ${sustainable:,.0f}/mo.")
+    return {
+        "prob": prob, "pct": f"{prob:.0%}", "n": n, "cls": cls, "band": band,
+        "headline": f"Your plan holds in {prob:.0%} of {n:,} simulated markets.",
+        "standing": standing, "lever": lever,
+        "at_risk_pct": round(PROB_AT_RISK * 100),
+        "mid_pct": round((PROB_COMFORTABLE - PROB_AT_RISK) * 100),
+        "good_pct": round((1 - PROB_COMFORTABLE) * 100),
+        "marker": round(min(max(prob, 0.02), 0.98) * 100, 1),
+        "est": est,
+    }
+
+
 def _pricing_context(p: dict) -> dict | None:
     """How the balances on this page were valued.
 
@@ -181,25 +274,57 @@ def build_context(a: dict, profile: dict) -> dict:
     headroom = sustainable - (desired or 0)
 
     prob = mc["success_prob"]
+    gaps = parse_gaps(a.get("data_gaps") or [])
+    est_tiles, est_sections = gap_targets(gaps)
+
+    # Every tile that carries a judgement carries the word for it too: red and
+    # green is the one distinction a large minority of readers cannot make.
     tiles = [
-        {"label": "Net worth (incl. home)", "value": money(snap["net_worth"], 2),
+        {"key": "net_worth", "label": "Net worth (incl. home)",
+         "value": money(snap["net_worth"], 2),
          "sub": f'{money(snap["portfolio"], 2)} investable'},
-        {"label": "Modeled success probability", "value": f"{prob:.0%}",
-         "cls": "good" if prob >= 0.85 else ("warn" if prob >= 0.7 else "bad"),
+        {"key": "success", "label": "Modeled success probability",
+         "value": f"{prob:.0%}",
+         "cls": "good" if prob >= PROB_COMFORTABLE else ("warn" if prob >= PROB_AT_RISK else "bad"),
+         "status": ("comfortable" if prob >= PROB_COMFORTABLE
+                    else ("tight" if prob >= PROB_AT_RISK else "at risk")),
          "sub": (f'{mc["n"]:,} fat-tailed paths through {pj["assumptions"]["joint_horizon_year"]}; '
                  f'younger spouse age {pj["assumptions"]["younger_spouse_horizon_age"]}')},
-        {"label": "Savings rate", "value": pct(snap["savings_rate"], 1),
+        {"key": "savings_rate", "label": "Savings rate",
+         "value": pct(snap["savings_rate"], 1),
          "sub": "of gross household income"},
-        {"label": "Monthly surplus", "value": f'${cf["surplus_monthly"]:,}',
+        {"key": "surplus", "label": "Monthly surplus",
+         "value": f'${cf["surplus_monthly"]:,}',
          "cls": "good" if cf["surplus_monthly"] >= 0 else "bad",
+         "status": "positive" if cf["surplus_monthly"] >= 0 else "negative",
          "sub": "take-home minus current spending"},
-        {"label": "Time to retirement", "value": f"{m_left // 12}y {m_left % 12}m",
+        {"key": "to_retirement", "label": "Time to retirement",
+         "value": f"{m_left // 12}y {m_left % 12}m",
          "sub": f"target {ret_ym}"},
-        {"label": "Spending headroom" if headroom >= 0 else "Spending gap",
+        {"key": "headroom",
+         "label": "Spending headroom" if headroom >= 0 else "Spending gap",
          "value": f"${abs(headroom):,.0f}/mo",
          "cls": "good" if headroom >= 0 else "bad",
+         "status": "room to spare" if headroom >= 0 else "short",
          "sub": f"adjustable lifestyle ${sustainable:,.0f} vs modeled ${desired:,.0f}"},
     ]
+    for t in tiles:
+        t["est"] = t["key"] in est_tiles
+
+    verdict = build_verdict(prob, mc["n"], sustainable, desired,
+                            est="answer" in est_sections)
+
+    # The three assumptions that move the answer most, said once under the
+    # verdict. The full list stays where it is, at the foot of the page.
+    pja = pj["assumptions"]
+    key_assumptions = [
+        f'{pja["mean_return"]:.1%} nominal return',
+        f'{pja["inflation"]:.1%} inflation',
+    ]
+    drag = pja.get("fee_drag_detail") or {}
+    if drag.get("advisory") or drag.get("funds"):
+        key_assumptions.append(
+            f'net of ${drag.get("advisory", 0) + drag.get("funds", 0):,.0f}/yr in fees')
 
     # cash-flow breakdown of gross pay
     gross = cf["gross_monthly"]
@@ -520,6 +645,26 @@ def build_context(a: dict, profile: dict) -> dict:
                             else None)}
                  for h in (hold.get("all") or hold.get("top", []))]
 
+    # The rail. Thirty-odd cards in one column is a document without a contents
+    # page; this is the contents page, and it only lists what actually rendered.
+    nav_sections = [
+        ("answer", "The answer", True),
+        ("today", "Today's picture", True),
+        ("k401", "401(k)", bool(k401)),
+        ("spending", "Where the money goes", bool(sd)),
+        ("equity", "Unvested equity", bool(vest_ctx)),
+        ("investments", "Investments", bool(inv_rows or hold_rows)),
+        ("plan", "The plan to {}".format(pj["ages"][-1]), True),
+        ("markets", "Ten thousand markets", True),
+        ("socsec", "Social Security", bool(charts.get("ss"))),
+        ("mortgage", "Mortgage & escrow", bool(charts.get("mortgage") or esc_ctx)),
+        ("taxes", "Taxes & assumptions", True),
+        ("recs", "What to do next", bool(a.get("recommendations"))),
+    ]
+    nav = [{"id": f"sec-{sid}", "label": label, "est": sid in est_sections,
+            "count": len(a["recommendations"]) if sid == "recs" else None}
+           for sid, label, shown in nav_sections if shown]
+
     return {"a": a, "snap": snap, "cf": cf, "tiles": tiles, "cash_dist": cash_dist,
             "sd": sd, "spend_rows": spend_rows, "oneoff_rows": oneoff_rows,
             "ia": ia, "inv_rows": inv_rows,
@@ -536,7 +681,9 @@ def build_context(a: dict, profile: dict) -> dict:
             "health_transitions": health_transitions, "stress_rows": stress_rows,
             "risk_rows": risk_rows, "risk_model": rm, "mc_metrics": mc_metrics,
             "assumptions": pj["assumptions"], "tax_year": a.get("tax_year"),
-            "data_gaps": a.get("data_gaps") or [],
+            "data_gaps": a.get("data_gaps") or [], "gaps": gaps,
+            "est_sections": est_sections, "nav": nav,
+            "verdict": verdict, "key_assumptions": key_assumptions,
             "generated_at": a.get("generated", "")}
 
 

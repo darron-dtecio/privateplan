@@ -70,12 +70,80 @@ pre#log { background: var(--page); border: 1px solid var(--border); border-radiu
   border-radius: 0 8px 8px 0; font-size: 13px; color: var(--ink2); margin-top: 14px; }
 footer { margin-top: 22px; }
 .note a { font-weight: 600; }
+
+/* breadcrumb — the same destinations in the same order on every page, instead
+   of a different sentence of links in each page's subheading */
+.crumbs { display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+  font-size: 13px; font-weight: 600; flex-wrap: wrap; }
+.crumbs a { color: var(--ink2); text-decoration: none; }
+.crumbs a:hover { color: var(--s1); }
+.crumbs .sep { color: var(--baseline); }
+.crumbs .here { color: var(--ink); }
+
+/* a word beside every status colour: red and green alone is the one
+   distinction a large minority of readers cannot make */
+.stat { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px;
+  font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+  border: 1px solid var(--border); border-radius: 999px; padding: 0 8px;
+  color: var(--muted); white-space: nowrap; }
+.stat.good { color: var(--good); border-color: var(--good); }
+.stat.warn { color: var(--s2); border-color: var(--s2); }
+.stat.bad { color: var(--bad); border-color: var(--bad); }
+
+/* the pipeline as a path, one state per step */
+.steps { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px; margin-top: 18px; }
+@media (max-width: 1100px) { .steps { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 860px) { .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .steps { grid-template-columns: 1fr; } }
+.step { background: var(--page); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 14px; }
+.step.pending { opacity: .72; }
+/* Optional stages read as available, not as unfinished business: a dashed edge
+   and no dimming, so nobody thinks their plan is incomplete without one. */
+.step.optional { border-style: dashed; }
+.step.optional .name .dot { border-style: dashed; border-color: var(--s4); }
+.step.optional.done .name .dot { border-style: solid; border-color: var(--good);
+  background: var(--good); }
+.step.current { background: var(--surface); border: 1.5px solid var(--s1);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--s1) 10%, transparent); }
+.step .name { display: flex; align-items: center; gap: 7px; font-size: 13.5px;
+  font-weight: 600; }
+.step.current .name { color: var(--s1); }
+.step .name .dot { width: 15px; height: 15px; border-radius: 50%; flex: none;
+  border: 2px solid var(--muted); }
+.step.done .name .dot { border-color: var(--good); background: var(--good); }
+.step.current .name .dot { border-color: var(--s1); border-style: dashed; }
+.step .detail { font-size: 12.5px; color: var(--ink2); margin-top: 6px; line-height: 1.4; }
+.step .when { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.step.current .when { color: var(--s1); font-weight: 600; }
+.step a { font-size: 12.5px; font-weight: 600; }
+
+/* one document, one row, one sentence */
+.doc { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center;
+  padding: 9px 0; border-bottom: 1px solid var(--grid); }
+.doc:last-child { border-bottom: 0; }
+.doc .name { font-size: 13.5px; font-weight: 600; word-break: break-all; }
+.doc .detail { font-size: 12px; color: var(--muted); }
+.headline { display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; }
+.headline .btn { flex: none; }
+.runrow { display: flex; align-items: center; gap: 8px; margin-top: 16px;
+  padding-top: 14px; border-top: 1px solid var(--grid); flex-wrap: wrap; }
+.runrow .cap { font-size: 12.5px; color: var(--muted); margin-right: 2px; }
+.progress { height: 6px; background: var(--grid); border-radius: 3px; overflow: hidden;
+  margin-top: 12px; display: none; }
+.progress span { display: block; height: 100%; background: var(--s1); border-radius: 3px;
+  width: 30%; animation: crawl 1.6s ease-in-out infinite; }
+@keyframes crawl { 0% { margin-left: -30%; } 100% { margin-left: 100%; } }
+@media (prefers-reduced-motion: reduce) { .progress span { animation: none; width: 100%; } }
 </style>
 </head>
 <body>
 <div class="wrap">
 <div class="topbar">
   <div>
+    {% block crumbs %}{% endblock %}
     <h1>{% block heading %}Stock Analysis{% endblock %}</h1>
     <div class="sub">{% block subheading %}{% endblock %}</div>
   </div>

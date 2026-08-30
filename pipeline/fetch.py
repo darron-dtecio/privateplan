@@ -34,7 +34,8 @@ def save(path: Path, obj: dict) -> None:
     print(f"  wrote {path.relative_to(ROOT)} ({path.stat().st_size // 1024} KB)")
 
 
-def fetch_fund(ticker: str, out_dir: Path, skip_sentiment: bool) -> int:
+def fetch_fund(ticker: str, out_dir: Path, skip_sentiment: bool,
+               skip_narrative: bool = False) -> int:
     """Fund path: cost, holdings and exposure instead of SEC fundamentals.
 
     An ETF or mutual fund has no revenue, EPS or SEC company facts, so the
@@ -79,6 +80,17 @@ def fetch_fund(ticker: str, out_dir: Path, skip_sentiment: bool) -> int:
             failures.append(f"Sentiment: {e}")
 
     if (out_dir / "fund.json").exists():
+        # The findings, then the page — in that order, so the dashboard is
+        # complete on the first render rather than needing a second pass once a
+        # narrative exists.
+        if not skip_narrative:
+            print("Writing narrative (rule-based) ...")
+            try:
+                import narrate
+                narrate.run(ticker)
+            except Exception as e:
+                failures.append(f"Narrative: {e}")
+                traceback.print_exc()
         print("Rendering fund dashboard ...")
         try:
             fund_render.render(ticker)
@@ -106,6 +118,9 @@ def main() -> int:
     ap.add_argument("--skip-forecast", action="store_true")
     ap.add_argument("--skip-sources", action="store_true")
     ap.add_argument("--skip-sentiment", action="store_true")
+    ap.add_argument("--skip-narrative", action="store_true",
+                    help="do not write narrative.json (leave the findings to /analyze)")
+    ap.add_argument("--skip-render", action="store_true")
     args = ap.parse_args()
 
     ticker = args.ticker.upper()
@@ -122,19 +137,54 @@ def main() -> int:
     # entirely. Detect up front when Yahoo knows; otherwise start down the
     # company path and switch as soon as EDGAR says the symbol isn't a filer.
     import fund
-    if fund.classify(ticker) == "fund":
+    kind = fund.classify(ticker)
+    if kind == "fund":
         print(f"{ticker} is a fund — using the fund pipeline "
               f"(no SEC fundamentals, estimates or forecast).")
-        return fetch_fund(ticker, out_dir, args.skip_sentiment)
+        return fetch_fund(ticker, out_dir, args.skip_sentiment, args.skip_narrative)
+
+    # An equity that already carries fund.json was misfiled by an earlier run —
+    # most likely one where EDGAR was unreachable. Leaving it in place makes the
+    # mistake permanent, because every downstream check treats that file as
+    # proof of what the symbol is.
+    stale_fund = out_dir / "fund.json"
+    if kind == "equity" and stale_fund.exists():
+        stale_fund.unlink()
+        print(f"  ! removed data/{ticker}/fund.json — Yahoo classifies {ticker} as "
+              f"an equity, so that file was written by a failed earlier run")
+        # The narrative written from it describes a fund that does not exist.
+        # A company narrative has no cost verdict, so the shape identifies it.
+        stale_narrative = out_dir / "narrative.json"
+        try:
+            if "cost_verdict" in json.loads(stale_narrative.read_text(encoding="utf-8")):
+                stale_narrative.unlink()
+                print(f"  ! removed data/{ticker}/narrative.json — it was written "
+                      f"about {ticker} as a fund")
+        except (OSError, ValueError):
+            pass
 
     print(f"[1/6] SEC EDGAR financials for {ticker} ...")
     try:
         save(out_dir / "financials.json", edgar.fetch_financials(ticker))
+    except edgar.AccessBlocked as e:
+        # Not a verdict on the symbol: SEC would not answer at all. Falling back
+        # to the fund pipeline here is what previously turned equities into
+        # "funds" with no fundamentals and no forecast.
+        print(f"\n! {e}\n")
+        print(f"{ticker}: stopping — with no SEC data there are no fundamentals "
+              f"and no forecast to build a dashboard from.")
+        return 2
     except edgar.TickerNotFound as e:
         print(f"  ! {e}")
+        if kind == "equity":
+            print(f"{ticker}: Yahoo calls this an equity but SEC has no "
+                  f"operating-company filing for it — a foreign issuer or ADR "
+                  f"without XBRL. There is nothing to forecast from; not "
+                  f"treating it as a fund.")
+            return 1
         print(f"{ticker} is not an SEC operating-company filer — "
               f"retrying as a fund.")
-        return fetch_fund(ticker, out_dir, args.skip_sentiment)
+        return fetch_fund(ticker, out_dir, args.skip_sentiment, args.skip_narrative)
     except Exception as e:
         failures.append(f"EDGAR: {e}")
         traceback.print_exc()
@@ -202,6 +252,27 @@ def main() -> int:
             forecast.run(ticker)
         except Exception as e:
             failures.append(f"Forecast: {e}")
+            traceback.print_exc()
+
+    # The narrative is written from the data just fetched, then the dashboard is
+    # rendered from both — so a bare fetch produces a finished page. /analyze
+    # replaces the narrative with a researched one and re-renders on top.
+    if not args.skip_narrative and (out_dir / "forecast.json").exists():
+        print("Writing narrative (rule-based) ...")
+        try:
+            import narrate
+            narrate.run(ticker)
+        except Exception as e:
+            failures.append(f"Narrative: {e}")
+            traceback.print_exc()
+
+    if not args.skip_render and (out_dir / "forecast.json").exists():
+        print("Rendering dashboard ...")
+        try:
+            import render
+            render.render(ticker)
+        except Exception as e:
+            failures.append(f"Render: {e}")
             traceback.print_exc()
 
     if failures:

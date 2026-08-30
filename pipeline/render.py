@@ -815,14 +815,22 @@ def build_context(ticker: str) -> dict:
     }
 
 
-def main() -> int:
-    ticker = (sys.argv[1] if len(sys.argv) > 1 else "MSFT").upper()
+def render(ticker: str) -> Path:
+    """Write dashboards/<TICKER>.html and return its path.
+
+    Callable rather than only a __main__ entry point so fetch.py can finish the
+    job it started without shelling out to a second interpreter.
+    """
+    ticker = ticker.upper()
     # A fund has fund.json and no financials.json — render its own dashboard
     # rather than failing on absent fundamentals.
     data_dir = ROOT / "data" / ticker
     if (data_dir / "fund.json").exists() and not (data_dir / "financials.json").exists():
         import fund_render
-        return 0 if fund_render.render(ticker) else 1
+        out = fund_render.render(ticker)
+        if out is None:
+            raise SystemExit(f"{ticker}: fund render produced nothing")
+        return out
     env = Environment(loader=FileSystemLoader(ROOT / "templates"),
                       autoescape=select_autoescape(["html", "j2"]))
     ctx = build_context(ticker)
@@ -831,6 +839,12 @@ def main() -> int:
     out.parent.mkdir(exist_ok=True)
     out.write_text(html, encoding="utf-8")
     print(f"wrote {out} ({out.stat().st_size // 1024} KB)")
+    return out
+
+
+def main() -> int:
+    ticker = (sys.argv[1] if len(sys.argv) > 1 else "MSFT").upper()
+    render(ticker)
     return 0
 
 

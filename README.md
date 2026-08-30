@@ -59,11 +59,25 @@ questions your individual accounts cannot:
 - What unvested equity adds, which is one of the few genuinely knowable inputs in
   a financial plan and is usually left out.
 
-**A stock analyzer.** A SEC/EDGAR-backed pipeline that pulls fundamentals,
+**A stock analyzer.** Set `PRIVATEPLAN_CONTACT` to an email address first — SEC
+rejects requests without one and the company pipeline cannot run (see
+[docs/SETUP.md](docs/SETUP.md)). A SEC/EDGAR-backed pipeline that pulls fundamentals,
 filings and estimates for any US-listed ticker and renders a 12-quarter outlook
 dashboard. It is here because your portfolio *is* part of your plan: the
 portfolio step runs it across everything you hold and weights the result by what
 you actually own.
+
+Each dashboard comes with its findings already written. `pipeline/narrate.py`
+composes the headline, the quarter recap, a bull and bear case, the forecast
+rationale, risks and catalysts from the fetched numbers alone — no model, no API
+key, no network beyond the data already pulled. Every sentence is arithmetic on
+a value in `financials.json`, `forecast.json`, `estimates.json` or `fund.json`,
+and the page says so.
+
+What it cannot do is read the earnings call, weigh management's tone, or judge
+whether guidance contradicts the model — that needs a human or an LLM, and the
+`/analyze` skill in Claude Code is the version that does it. Running it replaces
+the computed narrative with a researched one. Neither is investment advice.
 
 ---
 

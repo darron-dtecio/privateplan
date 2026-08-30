@@ -38,7 +38,8 @@ of leak it missed.
 
 **Every module carries its own self-test.** Look at the bottom of any file in
 `finance/` — there is a `if __name__ == "__main__":` block with real assertions on
-synthetic data. `finance/selftest.py` runs them all as subprocesses. New code
+synthetic data. `finance/selftest.py` runs them all as subprocesses — plus the
+stock-pipeline modules that carry one, listed in `PIPELINE_MODULES`. New code
 should come with the same. This is unusual and deliberate: it means any module
 can be verified in isolation, on a machine holding no personal data at all.
 

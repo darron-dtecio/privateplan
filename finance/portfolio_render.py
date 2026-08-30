@@ -540,10 +540,15 @@ def build_context(p: dict) -> dict:
                    ("Cash & money market", p["cash_total"], S4),
                    ("Other", p["other_total"], S2)], total)
 
-    charts = {"weights": weight_chart(
-        stocks, "chart-weights", "Position sizes — individual stocks",
-        f'{len(stocks)} companies, {money(p["stocks_total"], 2)} of a '
-        f'{money(total, 2)} portfolio.')}
+    # A portfolio of nothing but funds is a perfectly ordinary portfolio — an
+    # all-index holder has no individual companies to size — so the chart is
+    # omitted rather than built from an empty series, which raised on max().
+    charts = {}
+    if stocks:
+        charts["weights"] = weight_chart(
+            stocks, "chart-weights", "Position sizes — individual stocks",
+            f'{len(stocks)} companies, {money(p["stocks_total"], 2)} of a '
+            f'{money(total, 2)} portfolio.')
 
     # one fee chart per advised account that has enough billing history
     fee_charts = []
@@ -582,23 +587,38 @@ def build_context(p: dict) -> dict:
                    for k, v in sorted(sectors.items(), key=lambda kv: -kv[1])]
 
     top5 = sum(r["value"] for r in stocks[:5])
+    # An all-fund portfolio has no individual companies, so every "of stock
+    # value" denominator here is zero. That is a real holding pattern — an
+    # index-only investor — not a broken input, so the stock-specific tiles say
+    # so instead of dividing by it.
+    stock_total = p["stocks_total"] or 0
     tiles = [
         {"label": "Total portfolio", "value": money(total, 2),
          "sub": f'{len(stocks)} stocks · {len(p["funds"])} funds · '
                 f'{len(p["cash"])} cash'},
-        {"label": "In individual stocks", "value": money(p["stocks_total"], 2),
-         "sub": pct(p["stocks_total"] / total, 1) + " of portfolio"},
-        {"label": "Top-5 concentration", "value": pct(top5 / total, 1),
-         "cls": "bad" if top5 / total > 0.4 else ("warn" if top5 / total > 0.3 else ""),
-         "sub": ", ".join(r["ticker"] for r in stocks[:5])},
+        {"label": "In individual stocks", "value": money(stock_total, 2),
+         "sub": (pct(stock_total / total, 1) + " of portfolio" if total
+                 else "no holdings")},
+        {"label": "Top-5 concentration",
+         "value": pct(top5 / total, 1) if total and stocks else "—",
+         "cls": ("bad" if total and top5 / total > 0.4
+                 else "warn" if total and top5 / total > 0.3 else ""),
+         "status": (("concentrated" if top5 / total > 0.4
+                     else "watch" if top5 / total > 0.3 else "spread")
+                    if total and stocks else None),
+         "sub": (", ".join(r["ticker"] for r in stocks[:5]) if stocks
+                 else "no individual companies held")},
         {"label": "Weighted forward P/E", "value": f"{fpe:.1f}" if fpe else "—",
-         "sub": f'covers {pct(fpe_cov / p["stocks_total"], 0)} of stock value'},
+         "sub": (f'covers {pct(fpe_cov / stock_total, 0)} of stock value'
+                 if stock_total else "no individual companies held")},
         {"label": "Weighted 2-yr revenue CAGR",
          "value": pct(growth, 1) if growth is not None else "—",
          "sub": "from the modelled 12-quarter forecasts"},
         {"label": "Weighted analyst upside",
          "value": pct(upside, 1, True) if upside is not None else "—",
          "cls": "good" if (upside or 0) > 0 else "bad",
+         "status": ("above targets" if (upside or 0) <= 0 else "below targets")
+         if upside is not None else None,
          "sub": "mean price target vs last close"},
     ]
 
@@ -612,10 +632,12 @@ def build_context(p: dict) -> dict:
                     f'positions report cost'},
             {"label": "Unrealised gain/loss", "value": money(perf["gain"], 2),
              "cls": "good" if (perf["gain"] or 0) >= 0 else "bad",
+             "status": "gain" if (perf["gain"] or 0) >= 0 else "loss",
              "sub": f'on {money(perf["value"], 2)} of market value'},
             {"label": "Total return on cost",
              "value": pct(perf["gain_pct"], 1, True),
              "cls": "good" if (perf["gain_pct"] or 0) >= 0 else "bad",
+             "status": "ahead" if (perf["gain_pct"] or 0) >= 0 else "behind",
              "sub": (f'covers {pct(cov, 0)} of the portfolio'
                      if cov is not None else "positions reporting cost")},
         ]
@@ -815,18 +837,41 @@ def build_context(p: dict) -> dict:
         "reversals": activity.get("reversed_trade_pairs_excluded") or 0,
     }
 
-    return {"p": p, "pricing": pricing,
+    # Eleven sections in one column is the same problem the retirement dashboard
+    # had; this is its contents page, built from what actually rendered.
+    failed_rows = [{"ticker": f["ticker"], "reason": f["reason"],
+                    "value": money(f["value"], 2),
+                    "pct": pct(f["value"] / total, 1) if total else "—",
+                    "link": (f'/dashboard/{f["ticker"]}'
+                             if f.get("has_dashboard") else None)}
+                   for f in (p.get("failed") or [])]
+
+    nav_sections = [
+        ("mix", "What you hold", True),
+        ("weights", "Weights", bool(charts.get("weights"))),
+        # The card carries the per-company table and the holdings that could not
+        # be modelled; either one alone still earns the section.
+        ("holdings", "Holdings", bool(rows or failed_rows)),
+        ("trades", "Trade ledger", bool(trade_rows)),
+        ("fundcost", "What the funds cost", bool(fees)),
+        ("return", "Advised return", bool(advisory and advisory.get("configured")
+                                          and advisory.get("perf"))),
+        ("fees", "Fees vs the bar", bool(advisory)),
+        ("alloc", "True allocation", bool(alloc_rows)),
+        ("lookthrough", "Look-through", bool(look_rows)),
+        ("sectors", "Sectors & characteristics", True),
+        ("sleeves", "Funds, cash & other", True),
+    ]
+    nav = [{"id": f"sec-{sid}", "label": label}
+           for sid, label, shown in nav_sections if shown]
+
+    return {"p": p, "pricing": pricing, "nav": nav,
             "tiles": tiles, "charts": charts, "mix": mix, "rows": rows,
             "sector_rows": sector_rows, "funds": funds, "cash": cash, "other": other,
             "beta": f"{beta:.2f}" if beta else "—",
             "dy": pct(dy, 2) if dy else "—",
             "tpe": f"{tpe:.1f}" if tpe else "—",
-            "failed": [{"ticker": f["ticker"], "reason": f["reason"],
-                        "value": money(f["value"], 2),
-                        "pct": pct(f["value"] / total, 1) if total else "—",
-                        "link": (f'/dashboard/{f["ticker"]}'
-                                 if f.get("has_dashboard") else None)}
-                       for f in (p.get("failed") or [])],
+            "failed": failed_rows,
             "fund_rows": fund_rows, "look_rows": look_rows, "alloc_rows": alloc_rows,
             "true_sectors": true_sectors, "fees": fees, "advisory": advisory,
             "fee_charts": fee_charts,

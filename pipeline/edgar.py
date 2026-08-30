@@ -137,13 +137,33 @@ CASH_FLOW_METRICS = {"operating_cash_flow", "capex", "d_and_a", "sbc",
                      "dividends_paid", "buybacks"}
 
 
+def _blocked(url: str) -> AccessBlocked:
+    """The 403 message, with the fix in it rather than a status code alone."""
+    if contact.contact():
+        return AccessBlocked(
+            f"SEC refused the request (403) for {url}. The configured contact "
+            f"address is {contact.contact()!r}; SEC may be rate-limiting this "
+            f"address or blocking this network. Wait and retry.")
+    return AccessBlocked(
+        f"SEC refused the request (403) for {url} because PRIVATEPLAN_CONTACT is "
+        f"not set, so the User-Agent carries the literal placeholder "
+        f"{contact.user_agent()!r}. EDGAR's fair-access policy requires a real "
+        f"contact address.\n"
+        f'  PowerShell:  $env:PRIVATEPLAN_CONTACT = "you@example.com"\n'
+        f"  bash/zsh:    export PRIVATEPLAN_CONTACT='you@example.com'\n"
+        f"  See docs/SETUP.md. Funds still work without it; company "
+        f"fundamentals do not.")
+
+
 def _get(url: str, retries: int = 3) -> dict:
     contact.warn_if_unset("SEC EDGAR")
     for attempt in range(retries):
         resp = requests.get(url, headers=HEADERS, timeout=30)
         if resp.status_code == 200:
             return resp.json()
-        if resp.status_code in (403, 429):
+        if resp.status_code == 403:
+            raise _blocked(url)
+        if resp.status_code == 429:
             time.sleep(1 + attempt * 2)
             continue
         resp.raise_for_status()
@@ -225,7 +245,11 @@ def _get_cached(url: str, ttl: int, retries: int = 3) -> dict:
                 "etag": resp.headers.get("ETag"),
                 "last_modified": resp.headers.get("Last-Modified")}))
             return data
-        if resp.status_code in (403, 429):
+        if resp.status_code == 403:
+            if cached is not None:
+                return cached      # stale but real beats blocked and empty
+            raise _blocked(url)
+        if resp.status_code == 429:
             time.sleep(1 + attempt * 2)
             continue
         if cached is not None:
@@ -235,6 +259,17 @@ def _get_cached(url: str, ttl: int, retries: int = 3) -> dict:
         return cached
     resp.raise_for_status()
     return {}
+
+
+class AccessBlocked(RuntimeError):
+    """SEC refused the request outright — a transport problem, not a verdict.
+
+    Almost always the User-Agent: EDGAR's fair-access policy requires a real
+    contact address and 403s the placeholder. This is deliberately NOT a
+    ValueError and deliberately not TickerNotFound, because the one thing a
+    caller must never conclude from it is anything about the symbol. A blocked
+    request is not evidence that a ticker is a fund.
+    """
 
 
 class TickerNotFound(ValueError):
@@ -574,7 +609,44 @@ def fetch_financials(ticker: str) -> dict:
     }
 
 
+def selftest() -> int:
+    """No network: the failure taxonomy, which is where the bug lived.
+
+    A blocked request and an unlisted ticker mean completely different things —
+    one is our problem, the other is the symbol's — and conflating them is what
+    routed equities into the fund pipeline with no fundamentals or forecast.
+    """
+    assert issubclass(TickerNotFound, ValueError)
+    # AccessBlocked must never be catchable where TickerNotFound is caught:
+    # `except TickerNotFound: treat_as_fund()` would swallow it again.
+    assert not issubclass(AccessBlocked, TickerNotFound)
+    assert not issubclass(AccessBlocked, ValueError)
+    assert issubclass(AccessBlocked, RuntimeError)
+
+    saved = os.environ.pop("PRIVATEPLAN_CONTACT", None)
+    try:
+        msg = str(_blocked("https://data.sec.gov/x"))
+        # The message has to carry the fix, not just the status code.
+        assert "403" in msg and "PRIVATEPLAN_CONTACT" in msg, msg
+        assert "export PRIVATEPLAN_CONTACT" in msg and "$env:" in msg, msg
+        assert "Funds still work" in msg, msg
+        os.environ["PRIVATEPLAN_CONTACT"] = "tester@example.com"
+        msg = str(_blocked("https://data.sec.gov/x"))
+        # With an address configured the placeholder advice would be wrong.
+        assert "tester@example.com" in msg and "rate-limiting" in msg, msg
+        assert "PowerShell" not in msg, msg
+    finally:
+        os.environ.pop("PRIVATEPLAN_CONTACT", None)
+        if saved is not None:
+            os.environ["PRIVATEPLAN_CONTACT"] = saved
+
+    print("edgar self-test OK")
+    return 0
+
+
 if __name__ == "__main__":
     import sys
+    if "--selftest" in sys.argv:
+        raise SystemExit(selftest())
     result = fetch_financials(sys.argv[1] if len(sys.argv) > 1 else "MSFT")
     print(json.dumps(result["quarters"][-6:], indent=2))

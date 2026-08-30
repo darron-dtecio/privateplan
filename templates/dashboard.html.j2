@@ -146,6 +146,12 @@ footer { margin-top: 22px; }
 <div class="card">
   <h2>{{ narrative.headline }}</h2>
   <p style="margin:6px 0 0">{{ narrative.executive_summary }}</p>
+  {% if narrative.method == "rules" %}
+  <p class="mut" style="margin:8px 0 0">Written from the fetched numbers by
+    <code>pipeline/narrate.py</code> — arithmetic on the filings and quote feed, with no
+    filings read for tone and no web research behind it. Run <code>/analyze &lt;TICKER&gt;</code>
+    for a researched narrative in its place.</p>
+  {% endif %}
 </div>
 {% endif %}
 

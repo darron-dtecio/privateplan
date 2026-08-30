@@ -115,8 +115,23 @@ export PRIVATEPLAN_CONTACT="you@example.com"     # bash / zsh
 ```
 
 The address goes only to sec.gov and identifies you as a polite API consumer.
-Nothing else about you is transmitted. Without it, the app still runs and warns
-once per session.
+Nothing else about you is transmitted.
+
+**Without it the company half does not work at all.** SEC does not throttle the
+placeholder User-Agent, it rejects it: every EDGAR request comes back `403`, so
+there are no fundamentals, no forecast and no company dashboard. Funds and ETFs
+are unaffected — they come from Yahoo and never touch EDGAR.
+
+`$env:` and `export` set the variable for **that shell only**, which is the
+usual reason a pipeline that worked yesterday stops working in a new terminal.
+To set it once and keep it:
+
+```powershell
+setx PRIVATEPLAN_CONTACT "you@example.com"       # Windows, new terminals only
+```
+```bash
+echo 'export PRIVATEPLAN_CONTACT="you@example.com"' >> ~/.bashrc
+```
 
 ## Troubleshooting
 
@@ -139,6 +154,13 @@ The parsers match on header *names* — see
 auto-updated while its value still matches what the last ingest wrote. Once you
 edit it, automation stops touching it. If you hit a case where that fails, that
 is a bug worth reporting.
+
+**Every ticker comes back as a fund, or with no fundamentals or forecast.**
+`PRIVATEPLAN_CONTACT` is unset, so SEC is refusing every request with a `403`.
+Set it as above and re-run. The pipeline now stops with that message rather than
+carrying on, but data written by an earlier version may still be wrong: re-run
+`python pipeline/fetch.py <TICKER>` for any equity that ended up with a
+`fund.json`, and it will clear the misfiled files itself.
 
 **`data/` is getting large.** That is the stock pipeline's cache of SEC filings.
 Safe to delete; it re-downloads.

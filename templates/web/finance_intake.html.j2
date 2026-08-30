@@ -1,10 +1,18 @@
 {% extends "_base.html.j2" %}
 {% block title %}Intake — Personal Finance{% endblock %}
 {% block heading %}Profile intake &amp; review{% endblock %}
-{% block subheading %}<a href="/finance">← finance workspace</a> ·
-values prefilled from your documents are flagged
+{% block subheading %}Values prefilled from your documents are flagged
 <span class="badge" style="color:var(--s2);border-color:var(--s2)">verify</span>
 until you save{% endblock %}
+
+{% block crumbs %}
+<div class="crumbs">
+  <a href="/finance">Workspace</a><span class="sep">/</span>
+  <span class="here">Intake</span><span class="sep">/</span>
+  <a href="/finance/dashboard">Dashboard</a><span class="sep">/</span>
+  <a href="/finance/portfolio">Portfolio</a>
+</div>
+{% endblock %}
 
 {% block content %}
 <style>

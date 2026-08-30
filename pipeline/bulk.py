@@ -36,7 +36,9 @@ def _env(workers: int) -> dict:
 
 
 def run_fund(symbol: str, workers: int = 1) -> tuple[bool, str]:
-    for script in ("fund.py", "fund_render.py"):
+    # narrate.py sits between the data and the page for the same reason it does
+    # in fetch.py: render reads narrative.json, so it has to exist first.
+    for script in ("fund.py", "narrate.py", "fund_render.py"):
         r = subprocess.run([sys.executable, str(PIPELINE / script), symbol],
                            cwd=ROOT, capture_output=True, text=True, timeout=600,
                            env=_env(workers))
@@ -46,6 +48,18 @@ def run_fund(symbol: str, workers: int = 1) -> tuple[bool, str]:
 
 
 def is_fund(symbol: str) -> bool:
+    """Ask the quote feed what the symbol is; trust a local file only as a hint.
+
+    fund.json on disk used to be the whole answer, which made any earlier
+    misfiling permanent: a ticker that landed in the fund pipeline because SEC
+    was unreachable would be routed there forever, never retrying EDGAR. The
+    classifier is the authority; the file only breaks a tie when Yahoo is silent.
+    """
+    sys.path.insert(0, str(PIPELINE))
+    import fund
+    kind = fund.classify(symbol)
+    if kind != "unknown":
+        return kind == "fund"
     return (ROOT / "data" / symbol / "fund.json").exists()
 
 
@@ -65,12 +79,13 @@ def run_one(ticker: str, with_sentiment: bool, filings: int,
     r = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, timeout=1800,
                        env=_env(workers))
     if r.returncode != 0:
-        ok, ferr = run_fund(ticker, workers)
-        if ok:
-            return True, "not a company — analysed as a fund"
+        # A failed fetch says nothing about what the symbol is. This used to
+        # retry it as a fund, which quietly relabelled equities whenever EDGAR
+        # was blocked or down — and left them with no fundamentals or forecast.
+        # fetch.py already routes genuine funds itself.
         return False, "fetch failed: " + (r.stdout + r.stderr).strip()[-300:]
     # fetch.py detects funds itself and renders them; nothing left to do here.
-    if is_fund(ticker):
+    if (ROOT / "data" / ticker / "fund.json").exists():
         return True, "analysed as a fund"
     r2 = subprocess.run([sys.executable, str(PIPELINE / "render.py"), ticker],
                         cwd=ROOT, capture_output=True, text=True, timeout=600,
@@ -92,6 +107,20 @@ def main() -> int:
 
     tickers = [t.strip().upper() for t in args.tickers if t.strip()]
     workers = max(1, min(args.workers, len(tickers)))
+
+    # Say once, before any work, that the company half cannot succeed — rather
+    # than letting every equity in the batch fail one at a time on a 403.
+    sys.path.insert(0, str(PIPELINE))
+    import contact
+    if not contact.contact():
+        print("[bulk] PRIVATEPLAN_CONTACT is not set. SEC EDGAR rejects the "
+              "placeholder User-Agent with a 403, so no company in this batch "
+              "will get fundamentals or a forecast. Funds are unaffected.",
+              flush=True)
+        print('[bulk]   PowerShell:  $env:PRIVATEPLAN_CONTACT = "you@example.com"',
+              flush=True)
+        print("[bulk]   bash/zsh:    export PRIVATEPLAN_CONTACT='you@example.com'",
+              flush=True)
     print(f"[bulk] {len(tickers)} ticker(s) on {workers} worker(s): "
           f"{', '.join(tickers)}", flush=True)
     ok, failed = [], []
@@ -131,9 +160,9 @@ def main() -> int:
           f"{len(ok)} succeeded, {len(failed)} failed", flush=True)
     if failed:
         print(f"[bulk] failed: {', '.join(failed)}", flush=True)
-    print("[bulk] tip: the narrative and web research for each ticker come from "
-          "running /analyze <TICKER> in Claude Code; this batch covered the "
-          "mechanical data and dashboards.", flush=True)
+    print("[bulk] every dashboard carries a rule-based narrative written from the "
+          "fetched numbers. /analyze <TICKER> in Claude Code replaces it with one "
+          "that has read the filings and researched the quarter.", flush=True)
     return 0
 
 

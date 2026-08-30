@@ -58,6 +58,12 @@ h2 { font-size: 16px; margin: 0 0 4px; font-weight: 600; }
 #px-state.err { color: var(--bad); }
 .back-link { display: inline-flex; align-items: center; gap: 4px; font-size: 13px;
   font-weight: 600; color: var(--ink2); text-decoration: none; margin-bottom: 8px; }
+.crumbs { display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+  font-size: 13px; font-weight: 600; flex-wrap: wrap; }
+.crumbs a { color: var(--ink2); text-decoration: none; }
+.crumbs a:hover { color: var(--s1); }
+.crumbs .sep { color: var(--baseline); }
+.crumbs .here { color: var(--ink); }
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(195px, 1fr)); gap: 12px; margin-top: 16px; }
 .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
 .tile .label { font-size: 13px; color: var(--ink2); }
@@ -162,6 +168,61 @@ th.sortable[aria-sort] .arrow { opacity: 1; color: var(--s1); }
 #tt .t-val { font-weight: 600; }
 #tt .t-name { color: var(--ink2); font-size: 12px; }
 .crosshair { opacity: 0; }
+
+/* ---- section rail -------------------------------------------------------
+   Eleven sections in one column, and no way back to any of them. */
+.layout { display: grid; grid-template-columns: 208px minmax(0, 1fr); gap: 24px;
+  align-items: start; margin-top: 18px; }
+.rail { position: sticky; top: 20px; }
+.rail .cap { font-size: 11px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.rail nav { display: flex; flex-direction: column; gap: 2px; }
+.rail a { display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  padding: 6px 10px 6px 13px; border-radius: 8px; font-size: 13.5px;
+  color: var(--ink2); text-decoration: none; border-left: 3px solid transparent; }
+.rail a:hover { background: var(--surface); color: var(--ink); }
+.rail a.on { background: color-mix(in srgb, var(--s1) 9%, transparent);
+  border-left-color: var(--s1); color: var(--ink); font-weight: 600; }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .rail { position: static; }
+  .rail nav { flex-direction: row; overflow-x: auto; gap: 6px; padding-bottom: 2px; }
+  .rail a { border-left: 0; border: 1px solid var(--border); border-radius: 999px;
+    padding: 8px 14px; white-space: nowrap; background: var(--surface); }
+  .rail a.on { border-color: var(--s1); }
+}
+
+/* ---- status words, not status colours ---------------------------------- */
+.stat { display: inline-flex; align-items: center; gap: 4px; font-size: 11px;
+  font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+  border: 1px solid var(--border); border-radius: 999px; padding: 0 7px;
+  color: var(--muted); white-space: nowrap; }
+.stat.good { color: var(--good); border-color: var(--good); }
+.stat.warn { color: var(--warn); border-color: var(--warn); }
+.stat.bad { color: var(--bad); border-color: var(--bad); }
+.tile .top { display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; min-height: 20px; }
+
+/* ---- charts: a readout that exists without a cursor on it -------------- */
+.card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.tabs { display: flex; gap: 4px; background: var(--page); border: 1px solid var(--border);
+  border-radius: 8px; padding: 3px; flex: none; }
+.tabs button { background: transparent; color: var(--ink2); border: none;
+  border-radius: 6px; padding: 3px 10px; font: inherit; font-size: 12.5px;
+  font-weight: 600; cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); }
+.readout { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap;
+  margin-top: 12px; padding: 10px 14px; background: var(--page);
+  border: 1px solid var(--border); border-radius: 8px; }
+.readout .k { font-size: 11.5px; color: var(--muted); }
+.readout .v { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.readout .hint { margin-left: auto; font-size: 12px; color: var(--muted); align-self: center; }
+@media (max-width: 620px) { .readout .hint { display: none; } }
+
+/* ---- tables that stay readable while you scroll them ------------------- */
+.overx.tall { max-height: 440px; overflow-y: auto; }
+.overx.tall th { position: sticky; top: 0; background: var(--surface); z-index: 1;
+  box-shadow: 0 1px 0 var(--baseline); }
 .bar { transition: filter .08s; } .bar.hover { filter: brightness(1.18); }
 footer { margin-top: 22px; }
 </style>
@@ -171,7 +232,12 @@ footer { margin-top: 22px; }
 
 <div class="topbar">
   <div>
-    <a href="/finance" class="back-link">&larr; Finance workspace</a>
+    <div class="crumbs">
+      <a href="/finance">Workspace</a><span class="sep">/</span>
+      <a href="/finance/intake">Intake</a><span class="sep">/</span>
+      <a href="/finance/dashboard">Dashboard</a><span class="sep">/</span>
+      <span class="here">Portfolio</span>
+    </div>
     <h1>Investment Portfolio <span class="chip">combined view</span></h1>
     <div class="sub">Every holding from your brokerage exports, with the SEC-backed analyzer run against each operating company · generated {{ generated_at }}</div>
     <div class="sub" id="px-state">{{ pricing.label }}</div>
@@ -182,17 +248,31 @@ footer { margin-top: 22px; }
   </div>
 </div>
 
+<div class="layout">
+
+<div class="rail">
+  <div class="cap">On this page</div>
+  <nav id="rail-nav">
+    {% for s in nav %}<a href="#{{ s.id }}">{{ s.label }}</a>{% endfor %}
+  </nav>
+</div>
+
+<div class="content">
+
 <div class="tiles">
   {% for t in tiles %}
   <div class="tile">
-    <div class="label">{{ t.label }}</div>
+    <div class="top">
+      <span class="label">{{ t.label }}</span>
+      {% if t.status %}<span class="stat {{ t.cls or '' }}">{{ t.status }}</span>{% endif %}
+    </div>
     <div class="value {{ t.cls or '' }}">{{ t.value }}</div>
     {% if t.sub %}<div class="sub">{{ t.sub }}</div>{% endif %}
   </div>
   {% endfor %}
 </div>
 
-<div class="card">
+<div class="card" id="sec-mix">
   <h2>What the portfolio is made of</h2>
   <div class="sub">Individual companies can be modelled from SEC filings; funds and ETFs are exposures without company fundamentals.</div>
   <div class="dist">
@@ -207,8 +287,16 @@ footer { margin-top: 22px; }
 
 {% macro chart_card(c) %}
 <div class="card chart" id="{{ c.id }}">
-  <h2>{{ c.title }}</h2>
-  <div class="sub">{{ c.subtitle }}</div>
+  <div class="card-head">
+    <div>
+      <h2>{{ c.title }}</h2>
+      <div class="sub">{{ c.subtitle }}</div>
+    </div>
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" aria-selected="true" data-view="chart">Chart</button>
+      <button type="button" role="tab" aria-selected="false" data-view="table">Table</button>
+    </div>
+  </div>
   {% if c.legend %}
   <div class="legend">
     {% for k in c.legend %}
@@ -216,28 +304,30 @@ footer { margin-top: 22px; }
     {% endfor %}
   </div>
   {% endif %}
-  {{ c.svg | safe }}
+  <div class="readout" data-readout hidden></div>
+  <div data-view-panel="chart">{{ c.svg | safe }}</div>
   <script type="application/json" class="chart-data">{{ c.data_json | safe }}</script>
-  <details>
-    <summary>Table view</summary>
-    <div class="overx">
+  <div class="overx tall" data-view-panel="table" hidden>
     <table>
       <tr>{% for h in c.table.head %}<th class="{{ 'num' if not loop.first else 'lab' }}">{{ h }}</th>{% endfor %}</tr>
       {% for row in c.table.rows %}
       <tr>{% for cell in row %}<td class="{{ 'num' if not loop.first else 'lab' }}">{{ cell }}</td>{% endfor %}</tr>
       {% endfor %}
     </table>
-    </div>
-  </details>
+  </div>
 </div>
 {% endmacro %}
 
-{{ chart_card(charts.weights) }}
+{% if charts.weights %}
+<div id="sec-weights">{{ chart_card(charts.weights) }}</div>
+{% endif %}
 
-<div class="card">
+{% if rows or failed %}
+<div class="card" id="sec-holdings">
+  {% if rows %}
   <h2>Holdings — analyzer output per company</h2>
   <div class="sub">Fundamentals from SEC EDGAR, valuation and targets from market data, and the 2-year revenue CAGR from each company's modelled 12-quarter forecast. Click a ticker for its full dashboard.</div>
-  <div class="overx">
+  <div class="overx tall">
   <table class="holdings">
     <thead>
     <tr>
@@ -281,8 +371,9 @@ footer { margin-top: 22px; }
     </tbody>
   </table>
   </div>
+  {% endif %}
   {% if failed %}
-  <h2 style="margin-top:16px">Held but not modellable</h2>
+  <h2{% if rows %} style="margin-top:16px"{% endif %}>Held but not modellable</h2>
   <div class="overx">
   <table>
     <tr><th class="lab">Ticker</th><th class="lab">Why</th><th class="num">Value</th><th class="num">% of portfolio</th></tr>
@@ -294,9 +385,10 @@ footer { margin-top: 22px; }
   <p class="mut" style="margin:8px 0 0">A fundamentals model needs reported revenue and earnings. A pre-revenue company is a story and a balance sheet, not a set of ratios — size it on conviction, not on a P/E it does not have.</p>
   {% endif %}
 </div>
+{% endif %}
 
 {% if trade_rows %}
-<div class="card">
+<div class="card" id="sec-trades">
   <h2>Investment trade ledger — buys and sales</h2>
   <div class="sub">{{ trade_summary.buy_count }} completed buy{{ "" if trade_summary.buy_count == 1 else "s" }} and
     {{ trade_summary.sell_count }} completed sale{{ "" if trade_summary.sell_count == 1 else "s" }} from the imported investment activity.</div>
@@ -346,7 +438,7 @@ footer { margin-top: 22px; }
 {% endif %}
 
 {% if fees %}
-<div class="card">
+<div class="card" id="sec-fundcost">
   <h2>What the fund sleeve costs</h2>
   <div class="sub">Weighted expense ratio <b>{{ fees.weighted }}</b> — about <b>{{ fees.annual }}</b> a year, deducted from returns whether the funds do well or badly. Covers {{ fees.coverage }} of fund value{% if fees.missing %} (no expense data for {{ fees.missing | join(", ") }}){% endif %}.</div>
   {% if fees.cost %}
@@ -407,7 +499,7 @@ footer { margin-top: 22px; }
 
 {% if advisory and advisory.configured and advisory.perf %}
 {% set pf = advisory.perf %}
-<div class="card">
+<div class="card" id="sec-return">
   <h2>Return on advisor-managed assets</h2>
   {% if pf.verdict %}
   {% set v = pf.verdict %}
@@ -587,7 +679,7 @@ footer { margin-top: 22px; }
 {% endif %}
 
 {% if advisory %}
-<div class="card">
+<div class="card" id="sec-fees">
   <h2>Advisory fees against the return they have to earn</h2>
   {% if not advisory.configured %}
   <div class="sub">Nothing to measure. No advisory fee was charged in any activity ledger in
@@ -770,7 +862,7 @@ footer { margin-top: 22px; }
 {% for c in fee_charts %}{{ chart_card(c) }}{% endfor %}
 
 {% if alloc_rows %}
-<div class="grid2">
+<div class="grid2" id="sec-alloc">
   <div class="card">
     <h2>True asset allocation</h2>
     <div class="sub">Funds unwrapped into what they actually hold, combined with the direct stocks and cash.</div>
@@ -802,7 +894,7 @@ footer { margin-top: 22px; }
 {% endif %}
 
 {% if look_rows %}
-<div class="card">
+<div class="card" id="sec-lookthrough">
   <h2>Look-through exposure — what you really own</h2>
   <div class="sub">Shares held directly, plus the same shares held inside your funds. Fund holdings
     cover {{ look_coverage }} of the fund sleeve (providers publish only their largest positions),
@@ -833,7 +925,7 @@ footer { margin-top: 22px; }
 </div>
 {% endif %}
 
-<div class="grid2">
+<div class="grid2" id="sec-sectors">
   <div class="card">
     <h2>Sector exposure — direct stocks only</h2>
     <div class="sub">Compare with the look-through sector table above.</div>
@@ -858,7 +950,7 @@ footer { margin-top: 22px; }
   </div>
 </div>
 
-<div class="grid2">
+<div class="grid2" id="sec-sleeves">
   <div class="card">
     <h2>Funds &amp; ETFs</h2>
     <div class="sub">No company fundamentals to model — analysed on cost and contents instead.</div>
@@ -887,6 +979,9 @@ footer { margin-top: 22px; }
     <p class="mut" style="margin:8px 0 0">Cash is dry powder and a sequence-of-returns buffer, but it also drags long-run returns — worth sizing deliberately rather than by accumulation.</p>
   </div>
 </div>
+
+</div><!-- /.content -->
+</div><!-- /.layout -->
 
 <footer class="mut">Portfolio view · built from your brokerage exports and the SEC-backed analyzer ·
 fundamentals from EDGAR XBRL, valuation and targets from market data. Forecast quarters beyond
@@ -933,6 +1028,33 @@ analyst coverage are model extrapolations, not guidance. Not investment advice.<
   }
   function hideTip() { tt.style.display = 'none'; }
 
+  // The readout is the tooltip made permanent: the chart has always been
+  // hoverable and arrow-key navigable, but nothing said so and the values
+  // vanished with the cursor.
+  function fillReadout(el, slot, hint) {
+    if (!el) return;
+    el.textContent = '';
+    var head = document.createElement('div');
+    head.innerHTML = '<div class="k"></div><div class="v"></div>';
+    head.querySelector('.k').textContent = 'Position';
+    head.querySelector('.v').textContent = slot.label;
+    el.appendChild(head);
+    slot.items.forEach(function (it) {
+      var cell = document.createElement('div');
+      var k = document.createElement('div'); k.className = 'k'; k.textContent = it[0];
+      var v = document.createElement('div'); v.className = 'v'; v.textContent = it[1];
+      if (it[2]) v.style.color = it[2];
+      cell.appendChild(k); cell.appendChild(v);
+      el.appendChild(cell);
+    });
+    if (hint) {
+      var h = document.createElement('span');
+      h.className = 'hint'; h.textContent = hint;
+      el.appendChild(h);
+    }
+    el.hidden = false;
+  }
+
   document.querySelectorAll('.chart').forEach(function (card) {
     var svg = card.querySelector('svg');
     var dataEl = card.querySelector('script.chart-data');
@@ -940,7 +1062,24 @@ analyst coverage are model extrapolations, not guidance. Not investment advice.<
     var d = JSON.parse(dataEl.textContent);
     var ch = svg.querySelector('.crosshair');
     var bars = svg.querySelectorAll('.bar');
+    var readout = card.querySelector('[data-readout]');
+    var hint = 'hover the chart, or focus it and use ← →';
     var focusIdx = -1;
+
+    if (d.slots && d.slots.length) fillReadout(readout, d.slots[d.slots.length - 1], hint);
+
+    // Chart and table are two views of one thing, not a view and a footnote.
+    var tabs = card.querySelectorAll('.tabs button');
+    tabs.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        tabs.forEach(function (b) { b.setAttribute('aria-selected', String(b === btn)); });
+        card.querySelectorAll('[data-view-panel]').forEach(function (panel) {
+          panel.hidden = panel.dataset.viewPanel !== btn.dataset.view;
+        });
+        if (readout) readout.hidden = btn.dataset.view !== 'chart';
+      });
+    });
+
     function activate(i, clientX, clientY) {
       i = Math.max(0, Math.min(d.slots.length - 1, i));
       var cx = d.x0 + i * d.step;
@@ -948,6 +1087,7 @@ analyst coverage are model extrapolations, not guidance. Not investment advice.<
       bars.forEach(function (b) { b.classList.toggle('hover', +b.getAttribute('data-i') === i); });
       var r = svg.getBoundingClientRect();
       var px = r.left + cx * r.width / d.vbw;
+      fillReadout(readout, d.slots[i], hint);
       showTip(d.slots[i], clientX != null ? clientX : px,
               clientY != null ? clientY : r.top + r.height / 2);
       return i;
@@ -972,6 +1112,24 @@ analyst coverage are model extrapolations, not guidance. Not investment advice.<
     });
     svg.addEventListener('blur', deactivate);
   });
+
+  // Rail: highlight whichever section is currently under the reader.
+  var links = Array.prototype.slice.call(document.querySelectorAll('#rail-nav a'));
+  var targets = links.map(function (a) {
+    return document.getElementById(a.getAttribute('href').slice(1));
+  }).filter(Boolean);
+  if (targets.length && 'IntersectionObserver' in window) {
+    var visible = {};
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { visible[e.target.id] = e.isIntersecting; });
+      var current = null;
+      targets.forEach(function (t) { if (!current && visible[t.id]) current = t.id; });
+      links.forEach(function (a) {
+        a.classList.toggle('on', a.getAttribute('href') === '#' + current);
+      });
+    }, { rootMargin: '-20% 0px -70% 0px' });
+    targets.forEach(function (t) { io.observe(t); });
+  }
 })();
 
 /* Sortable columns on the wide tables. The cells hold formatted text ($1.2M,

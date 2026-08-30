@@ -123,15 +123,25 @@ def score(posts: list[dict]) -> None:
                       else "negative" if p["compound"] <= NEG_THRESHOLD else "neutral")
 
 
+def label_for(avg: float) -> str:
+    """Turn a mean compound score into the wording the dashboards use.
+
+    A function rather than an inline expression because narrate.py labels each
+    source with it too — two copies of these thresholds would drift, and the
+    second one would be wrong quietly.
+    """
+    return ("strongly positive" if avg >= 0.35 else "mildly positive" if avg >= 0.08
+            else "strongly negative" if avg <= -0.35
+            else "mildly negative" if avg <= -0.08 else "mixed / neutral")
+
+
 def summarize(posts: list[dict], days: int, errors: list) -> dict:
     n = len(posts)
     avg = sum(p["compound"] for p in posts) / n if n else 0.0
     counts = {"positive": 0, "neutral": 0, "negative": 0}
     for p in posts:
         counts[p["label"]] += 1
-    label = ("strongly positive" if avg >= 0.35 else "mildly positive" if avg >= 0.08
-             else "strongly negative" if avg <= -0.35
-             else "mildly negative" if avg <= -0.08 else "mixed / neutral")
+    label = label_for(avg)
 
     by_source: dict[str, dict] = {}
     for src in ("reddit", "stocktwits"):

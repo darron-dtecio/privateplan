@@ -34,7 +34,7 @@
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--page); color: var(--ink);
   font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
-.wrap { max-width: 1080px; margin: 0 auto; padding: 24px 20px 48px; }
+.wrap { max-width: 1320px; margin: 0 auto; padding: 24px 20px 48px; }
 a { color: var(--s1); }
 .card { background: var(--surface); border: 1px solid var(--border);
   border-radius: 10px; padding: 18px 20px; margin-top: 16px; }
@@ -49,9 +49,6 @@ h3 { font-size: 14px; margin: 0 0 6px; font-weight: 600; }
   vertical-align: 3px; margin-left: 8px; }
 #theme-btn { background: var(--surface); color: var(--ink2); border: 1px solid var(--border);
   border-radius: 8px; padding: 5px 12px; cursor: pointer; font-size: 13px; }
-.back-link { display: inline-flex; align-items: center; gap: 4px; font-size: 13px;
-  font-weight: 600; color: var(--ink2); text-decoration: none; margin-bottom: 8px; }
-.back-link:hover { color: var(--s1); }
 .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 16px; }
 .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
 .tile .label { font-size: 13px; color: var(--ink2); }
@@ -109,6 +106,130 @@ li { margin: 3px 0; }
 #tt .t-name { color: var(--ink2); font-size: 12px; }
 .crosshair { opacity: 0; }
 footer { margin-top: 22px; }
+
+/* ---- section rail -------------------------------------------------------
+   The page is thirty-odd cards in one column. Without a contents list, finding
+   anything twice means scrolling for it. */
+.layout { display: grid; grid-template-columns: 208px minmax(0, 1fr); gap: 24px;
+  align-items: start; margin-top: 18px; }
+.rail { position: sticky; top: 20px; }
+.rail .cap { font-size: 11px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.rail nav { display: flex; flex-direction: column; gap: 2px; }
+.rail a { display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  padding: 6px 10px 6px 13px; border-radius: 8px; font-size: 13.5px;
+  color: var(--ink2); text-decoration: none; border-left: 3px solid transparent; }
+.rail a:hover { background: var(--surface); color: var(--ink); }
+.rail a.on { background: color-mix(in srgb, var(--s1) 9%, transparent);
+  border-left-color: var(--s1); color: var(--ink); font-weight: 600; }
+.rail .gapcard { margin-top: 16px; padding: 10px 12px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 10px; }
+.rail .gapcard p { font-size: 12px; color: var(--muted); line-height: 1.45; margin: 0; }
+.rail .gapcard a { display: inline-block; padding: 0; margin-top: 6px; border: 0;
+  font-size: 12.5px; font-weight: 600; color: var(--s1); }
+.rail .n { font-size: 11px; font-weight: 700; color: var(--surface);
+  background: var(--bad); border-radius: 999px; padding: 0 6px; }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .rail { position: static; }
+  .rail nav { flex-direction: row; overflow-x: auto; gap: 6px; padding-bottom: 2px; }
+  .rail a { border-left: 0; border: 1px solid var(--border); border-radius: 999px;
+    padding: 8px 14px; white-space: nowrap; background: var(--surface); }
+  .rail a.on { border-color: var(--s1); }
+}
+
+/* breadcrumb — the same four destinations, same order, on every page */
+.crumbs { display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+  font-size: 13px; font-weight: 600; flex-wrap: wrap; }
+.crumbs a { color: var(--ink2); text-decoration: none; }
+.crumbs a:hover { color: var(--s1); }
+.crumbs .sep { color: var(--baseline); }
+.crumbs .here { color: var(--ink); }
+
+/* ---- the verdict --------------------------------------------------------
+   One sentence answering the question the page was opened to ask, with the
+   thresholds behind its colour drawn rather than implied. */
+.verdict { padding: 22px 24px; margin-top: 0; }
+.cap { font-size: 11px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--muted); }
+.verdict .head { font-size: 30px; line-height: 1.25; font-weight: 600;
+  margin: 8px 0 0; max-width: 46ch; text-wrap: pretty; }
+.verdict .head .n { font-variant-numeric: tabular-nums; }
+.verdict .head .n.good { color: var(--good); }
+.verdict .head .n.warn { color: var(--warn); }
+.verdict .head .n.bad { color: var(--bad); }
+.verdict p { font-size: 15px; color: var(--ink2); margin: 10px 0 0;
+  max-width: 64ch; text-wrap: pretty; }
+.verdict p b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.scale { display: flex; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 20px; }
+.scale span { display: block; }
+.scale-marks { position: relative; height: 30px; font-size: 11.5px; color: var(--muted); }
+.scale-marks .mk { position: absolute; top: -14px; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.scale-marks .mk i { display: block; width: 3px; height: 18px; background: var(--ink);
+  border-radius: 2px; }
+.scale-marks .mk b { font-size: 12px; font-variant-numeric: tabular-nums; }
+.scale-marks .t { position: absolute; top: 6px; transform: translateX(-50%);
+  font-variant-numeric: tabular-nums; }
+.scale-marks .lo { position: absolute; left: 0; top: 6px; }
+.scale-marks .hi { position: absolute; right: 0; top: 6px; }
+.assume { display: flex; align-items: center; gap: 10px; margin-top: 14px;
+  padding: 10px 14px; background: var(--page); border: 1px solid var(--border);
+  border-radius: 10px; font-size: 12.5px; color: var(--ink2); }
+
+/* ---- status words, not status colours ---------------------------------- */
+.stat { display: inline-flex; align-items: center; gap: 4px; font-size: 11px;
+  font-weight: 700; letter-spacing: .03em; text-transform: uppercase;
+  border: 1px solid var(--border); border-radius: 999px; padding: 0 7px;
+  color: var(--muted); white-space: nowrap; }
+.stat.good { color: var(--good); border-color: var(--good); }
+.stat.warn { color: var(--warn); border-color: var(--warn); }
+.stat.bad { color: var(--bad); border-color: var(--bad); }
+.est { display: inline-flex; align-items: center; font-size: 10.5px; font-weight: 700;
+  letter-spacing: .04em; text-transform: uppercase; color: var(--warn);
+  border: 1px solid var(--warn); border-radius: 999px; padding: 0 6px;
+  white-space: nowrap; }
+.tile .top { display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; min-height: 20px; }
+.tile.is-est { border-left: 3px solid var(--warn); }
+.tile.is-est .value { color: var(--muted); }
+h2 .est { vertical-align: 3px; margin-left: 8px; }
+
+/* ---- charts: a readout that exists without a cursor on it -------------- */
+.card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.tabs { display: flex; gap: 4px; background: var(--page); border: 1px solid var(--border);
+  border-radius: 8px; padding: 3px; flex: none; }
+.tabs button { background: transparent; color: var(--ink2); border: none;
+  border-radius: 6px; padding: 3px 10px; font: inherit; font-size: 12.5px;
+  font-weight: 600; cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); }
+.readout { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap;
+  margin-top: 12px; padding: 10px 14px; background: var(--page);
+  border: 1px solid var(--border); border-radius: 8px; }
+.readout .k { font-size: 11.5px; color: var(--muted); }
+.readout .v { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.readout .hint { margin-left: auto; font-size: 12px; color: var(--muted); align-self: center; }
+@media (max-width: 620px) { .readout .hint { display: none; } }
+
+.est-note { display: flex; align-items: center; gap: 8px; margin-top: 16px;
+  padding: 8px 14px; background: var(--page); border: 1px solid var(--border);
+  border-left: 3px solid var(--warn); border-radius: 0 8px 8px 0;
+  font-size: 12.5px; color: var(--ink2); }
+
+/* ---- tables that stay readable while you scroll them ------------------- */
+.overx.tall { max-height: 440px; overflow-y: auto; }
+.overx.tall th { position: sticky; top: 0; background: var(--surface); z-index: 1;
+  box-shadow: 0 1px 0 var(--baseline); }
+
+/* ---- bar rows that survive a narrow screen ----------------------------- */
+.hbar { grid-template-columns: minmax(0, 180px) 1fr 110px; }
+.hbar .lab { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 620px) {
+  .hbar { grid-template-columns: 1fr; gap: 4px; margin: 10px 0; }
+  .hbar .lab { white-space: normal; }
+  .hbar .val { text-align: left; font-weight: 600; }
+  .hbar .track { order: 3; }
+}
 </style>
 </head>
 <body>
@@ -116,38 +237,31 @@ footer { margin-top: 22px; }
 
 <div class="topbar">
   <div>
-    <a href="/finance" class="back-link">&larr; Finance workspace</a>
+    <div class="crumbs">
+      <a href="/finance">Workspace</a><span class="sep">/</span>
+      <a href="/finance/intake">Intake</a><span class="sep">/</span>
+      <span class="here">Dashboard</span><span class="sep">/</span>
+      <a href="/finance/portfolio">Portfolio</a>
+    </div>
     <h1>Retirement Outlook <span class="chip">local &amp; private</span></h1>
     <div class="sub">Personal financial analysis · tax year {{ tax_year }} · generated {{ generated_at }}</div>
   </div>
   <button id="theme-btn" type="button">◐ Theme</button>
 </div>
 
-{% if data_gaps %}
-<div class="card" style="border-left:3px solid var(--bad)">
-  <h2>Incomplete profile — some numbers below are placeholders</h2>
-  <div class="sub">Fill these in at <a href="/finance/intake">/finance/intake</a>, then re-run Analyze and Render.</div>
-  <ul>
-    {% for g in data_gaps %}<li>{{ g }}</li>{% endfor %}
-  </ul>
-  <p class="mut" style="margin:6px 0 0">Anything driven by spending — sustainable spending, the spending gap, and the Monte Carlo success probability — is meaningless until retirement spending is set.</p>
-</div>
-{% endif %}
-
-<div class="tiles">
-  {% for t in tiles %}
-  <div class="tile">
-    <div class="label">{{ t.label }}</div>
-    <div class="value {{ t.cls or '' }}">{{ t.value }}</div>
-    {% if t.sub %}<div class="sub">{{ t.sub }}</div>{% endif %}
-  </div>
-  {% endfor %}
-</div>
-
+{% macro est_note(sid) %}{% if sid in est_sections %}<div class="est-note"><span class="est">est</span>Some inputs behind this section are still placeholders — <a href="/finance/intake">fill them in</a> and re-run Analyze.</div>{% endif %}{% endmacro %}
 {% macro chart_card(c) %}
 <div class="card chart" id="{{ c.id }}">
-  <h2>{{ c.title }}</h2>
-  <div class="sub">{{ c.subtitle }}</div>
+  <div class="card-head">
+    <div>
+      <h2>{{ c.title }}</h2>
+      <div class="sub">{{ c.subtitle }}</div>
+    </div>
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" aria-selected="true" data-view="chart">Chart</button>
+      <button type="button" role="tab" aria-selected="false" data-view="table">Table</button>
+    </div>
+  </div>
   {% if c.legend %}
   <div class="legend">
     {% for k in c.legend %}
@@ -155,23 +269,103 @@ footer { margin-top: 22px; }
     {% endfor %}
   </div>
   {% endif %}
-  {{ c.svg | safe }}
+  <div class="readout" data-readout hidden></div>
+  <div data-view-panel="chart">{{ c.svg | safe }}</div>
   <script type="application/json" class="chart-data">{{ c.data_json | safe }}</script>
-  <details>
-    <summary>Table view</summary>
-    <div class="overx">
+  <div class="overx tall" data-view-panel="table" hidden>
     <table>
       <tr>{% for h in c.table.head %}<th class="{{ 'num' if not loop.first else 'lab' }}">{{ h }}</th>{% endfor %}</tr>
       {% for row in c.table.rows %}
       <tr>{% for cell in row %}<td class="{{ 'num' if not loop.first else 'lab' }}">{{ cell }}</td>{% endfor %}</tr>
       {% endfor %}
     </table>
-    </div>
-  </details>
+  </div>
 </div>
 {% endmacro %}
 
-<div class="grid2">
+<div class="layout">
+
+<div class="rail">
+  <div class="cap">On this page</div>
+  <nav id="rail-nav">
+    {% for s in nav %}
+    <a href="#{{ s.id }}">
+      <span>{{ s.label }}</span>
+      {% if s.count %}<span class="n">{{ s.count }}</span>
+      {% elif s.est %}<span class="est">est</span>{% endif %}
+    </a>
+    {% endfor %}
+  </nav>
+  {% if gaps %}
+  <div class="gapcard">
+    <p>{{ gaps | length }} input{{ '' if gaps | length == 1 else 's' }} still
+      {{ 'is' if gaps | length == 1 else 'are' }} a placeholder, so the figures
+      marked <span class="est">est</span> are estimates.</p>
+    <a href="/finance/intake">Fill them in →</a>
+  </div>
+  {% endif %}
+</div>
+
+<div class="content">
+
+<div class="card verdict" id="sec-answer">
+  <div class="cap">The answer{% if verdict.est %} <span class="est">est</span>{% endif %}</div>
+  <div class="head">Your plan holds in
+    <span class="n {{ verdict.cls }}">{{ verdict.pct }}</span>
+    of {{ "{:,}".format(verdict.n) }} simulated markets.</div>
+  <p>{{ verdict.standing }} {{ verdict.lever }}</p>
+
+  <div class="scale" aria-hidden="true">
+    <span style="width:{{ verdict.at_risk_pct }}%;background:var(--bad);opacity:.28"></span>
+    <span style="width:{{ verdict.mid_pct }}%;background:var(--warn);opacity:.34"></span>
+    <span style="width:{{ verdict.good_pct }}%;background:var(--good);opacity:.30"></span>
+  </div>
+  <div class="scale-marks">
+    <span class="mk" style="left:{{ verdict.marker }}%"><i></i><b>{{ verdict.pct }}</b></span>
+    <span class="t" style="left:{{ verdict.at_risk_pct }}%">{{ verdict.at_risk_pct }}</span>
+    <span class="t" style="left:{{ verdict.at_risk_pct + verdict.mid_pct }}%">{{ verdict.at_risk_pct + verdict.mid_pct }}</span>
+    <span class="lo">at risk</span>
+    <span class="hi">comfortable</span>
+  </div>
+
+  <div class="assume">
+    <span>Modelled at {{ key_assumptions | join(", ") }}.
+      <a href="#sec-taxes">See every assumption</a></span>
+  </div>
+</div>
+
+{% if gaps %}
+<div class="card" style="border-left:3px solid var(--warn)">
+  <h2>{{ gaps | length }} input{{ '' if gaps | length == 1 else 's' }} still needed
+    <span class="est">est</span></h2>
+  <div class="sub">Until these are set, everything derived from them is an estimate —
+    marked <span class="est">est</span> wherever it appears below.</div>
+  <ul>
+    {% for g in gaps %}
+    <li><b>{{ g.label }}</b>{% if g.required %} <span class="stat bad">required</span>{% endif %}
+      — {{ g.why }}</li>
+    {% endfor %}
+  </ul>
+  <p class="mut" style="margin:6px 0 0">Fill them in at
+    <a href="/finance/intake">the intake form</a>, then re-run Analyze and Render.</p>
+</div>
+{% endif %}
+
+<div class="tiles">
+  {% for t in tiles %}
+  <div class="tile{{ ' is-est' if t.est }}">
+    <div class="top">
+      <span class="label">{{ t.label }}</span>
+      {% if t.est %}<span class="est">est</span>
+      {% elif t.status %}<span class="stat {{ t.cls or '' }}">{{ t.status }}</span>{% endif %}
+    </div>
+    <div class="value {{ t.cls or '' }}">{{ t.value }}</div>
+    {% if t.sub %}<div class="sub">{{ t.sub }}</div>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+<div class="grid2" id="sec-today">
   <div class="card">
     <h2>Where each month's gross pay goes</h2>
     <div class="sub">Household gross {{ gross_monthly }}/mo while working.</div>
@@ -215,7 +409,7 @@ footer { margin-top: 22px; }
 </div>
 
 {% if k401 %}
-<div class="grid2">
+<div class="grid2" id="sec-k401">
   <div class="card">
     <h2>401(k) — validated against your paystub</h2>
     <div class="sub">Every figure below is reconciled to the pay statement, not estimated.</div>
@@ -280,7 +474,7 @@ footer { margin-top: 22px; }
 {% endif %}
 
 {% if sd %}
-{{ chart_card(charts.spending) }}
+<div id="sec-spending">{{ chart_card(charts.spending) }}</div>
 <div class="grid2">
   <div class="card">
     <h2>Where the money goes</h2>
@@ -365,7 +559,7 @@ footer { margin-top: 22px; }
 {% endif %}
 
 {% if vest %}
-<div class="card">
+<div class="card" id="sec-equity">
   <h2>Unvested equity in the plan</h2>
   <div class="sub">{{ vest.n }} vesting event{{ "" if vest.n == 1 else "s" }} still ahead
     — <b>{{ vest.shares }} shares</b> between {{ vest.first }} and {{ vest.last }}.
@@ -442,7 +636,7 @@ footer { margin-top: 22px; }
 {% endif %}
 
 {% if inv_rows %}
-<div class="grid2">
+<div class="grid2" id="sec-investments">
   <div class="card">
     <h2>Investment activity</h2>
     <div class="sub">{{ ia.n_months }} months of transaction history ({{ ia.first_month }} – {{ ia.last_month }}).
@@ -479,7 +673,7 @@ footer { margin-top: 22px; }
 {% endif %}
 
 {% if hold_rows %}
-<div class="card">
+<div class="card"{% if not inv_rows %} id="sec-investments"{% endif %}>
   <h2>Investment holdings</h2>
   <div class="sub">From your workbook and post-statement activity — {{ holdings.n }} position(s), total {{ holdings_total }}. All positions shown.
     {% if pricing and pricing.applied %}Share counts are the statement's; prices are live from
@@ -506,7 +700,7 @@ footer { margin-top: 22px; }
 </div>
 {% endif %}
 
-<div id="retirement-outlook">{{ chart_card(charts.projection) }}</div>
+<div id="sec-plan">{{ est_note("plan") }}<div id="retirement-outlook">{{ chart_card(charts.projection) }}</div></div>
 
 {% if goal_rows %}
 <div class="card" id="financial-goals">
@@ -557,7 +751,7 @@ footer { margin-top: 22px; }
 </div>
 {% endif %}
 
-{{ chart_card(charts.mc) }}
+<div id="sec-markets">{{ est_note("markets") }}{{ chart_card(charts.mc) }}</div>
 
 <div class="grid2">
   <div class="card">
@@ -588,7 +782,7 @@ footer { margin-top: 22px; }
   </table>
 </div>
 
-<div class="grid2">
+<div class="grid2" id="sec-socsec">
   {{ chart_card(charts.ss) }}
   <div class="card">
     <h2>Social Security detail</h2>
@@ -616,7 +810,7 @@ footer { margin-top: 22px; }
 </div>
 
 {% if charts.mortgage %}
-<div class="grid2">
+<div class="grid2" id="sec-mortgage">
   {{ chart_card(charts.mortgage) }}
   <div class="card">
     <h2>Mortgage payoff strategies</h2>
@@ -644,7 +838,7 @@ footer { margin-top: 22px; }
 {% endif %}
 
 {% if esc %}
-<div class="grid2">
+<div class="grid2"{% if not charts.mortgage %} id="sec-mortgage"{% endif %}>
   <div class="card">
     <h2>Escrow — property tax &amp; insurance</h2>
     <div class="sub">From the servicer's escrow analysis{% if esc.effective %}, effective {{ esc.effective }}{% endif %}. These ride inside the monthly mortgage payment but <b>outlive the loan</b>.</div>
@@ -669,7 +863,7 @@ footer { margin-top: 22px; }
 </div>
 {% endif %}
 
-<div class="grid2">
+<div class="grid2" id="sec-taxes">
   <div class="card">
     <h2>Taxes — working vs retired</h2>
     <table>
@@ -708,7 +902,7 @@ footer { margin-top: 22px; }
   </div>
 </div>
 
-<div class="card">
+<div class="card" id="sec-recs">
   <h2>Recommendations</h2>
   <div class="sub">Rule-based, computed from your numbers — a starting agenda, not financial advice.</div>
   {% for r in recs %}
@@ -718,6 +912,9 @@ footer { margin-top: 22px; }
   </div>
   {% endfor %}
 </div>
+
+</div><!-- /.content -->
+</div><!-- /.layout -->
 
 <footer class="mut">Personal finance dashboard · all data local (finance_data/, gitignored) ·
 deterministic model + Monte Carlo, estimates only — not tax, legal, or investment advice.
@@ -773,13 +970,51 @@ Verify {{ tax_year }} tax constants in finance/taxdata.py.</footer>
   }
   function hideTip() { tt.style.display = 'none'; }
 
+  // The readout is the tooltip made permanent. The chart has always been
+  // hoverable and arrow-key navigable; nothing on the page said so, and the
+  // values vanished with the cursor.
+  function fillReadout(el, slot, hint) {
+    if (!el) return;
+    el.textContent = '';
+    var lab = document.createElement('div');
+    lab.innerHTML = '<div class="k"></div><div class="v"></div>';
+    lab.querySelector('.k').textContent = 'Position';
+    lab.querySelector('.v').textContent = slot.label;
+    el.appendChild(lab);
+    slot.items.forEach(function (it) {
+      var cell = document.createElement('div');
+      var k = document.createElement('div');
+      k.className = 'k';
+      k.textContent = it[0];
+      var v = document.createElement('div');
+      v.className = 'v';
+      v.textContent = it[1];
+      if (it[2]) v.style.color = it[2];
+      cell.appendChild(k); cell.appendChild(v);
+      el.appendChild(cell);
+    });
+    if (hint) {
+      var h = document.createElement('span');
+      h.className = 'hint';
+      h.textContent = hint;
+      el.appendChild(h);
+    }
+    el.hidden = false;
+  }
+
   document.querySelectorAll('.chart').forEach(function (card) {
     var svg = card.querySelector('svg');
     var dataEl = card.querySelector('script.chart-data');
     if (!svg || !dataEl) return;
     var d = JSON.parse(dataEl.textContent);
     var ch = svg.querySelector('.crosshair');
+    var readout = card.querySelector('[data-readout]');
+    var hint = 'hover the chart, or focus it and use ← →';
     var focusIdx = -1;
+
+    // Something to read before anyone touches it: the far end of the series,
+    // which for every chart here is where the plan ends up.
+    if (d.slots && d.slots.length) fillReadout(readout, d.slots[d.slots.length - 1], hint);
 
     function activate(i, clientX, clientY) {
       i = Math.max(0, Math.min(d.slots.length - 1, i));
@@ -790,6 +1025,7 @@ Verify {{ tax_year }} tax constants in finance/taxdata.py.</footer>
       }
       var r = svg.getBoundingClientRect();
       var px = r.left + cx * r.width / d.vbw;
+      fillReadout(readout, d.slots[i], hint);
       showTip(d.slots[i], clientX != null ? clientX : px,
               clientY != null ? clientY : r.top + r.height / 2);
       return i;
@@ -799,6 +1035,20 @@ Verify {{ tax_year }} tax constants in finance/taxdata.py.</footer>
       hideTip();
       focusIdx = -1;
     }
+
+    // Chart and table are two views of one thing, not a view and a footnote.
+    var tabs = card.querySelectorAll('.tabs button');
+    tabs.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        tabs.forEach(function (b) {
+          b.setAttribute('aria-selected', String(b === btn));
+        });
+        card.querySelectorAll('[data-view-panel]').forEach(function (panel) {
+          panel.hidden = panel.dataset.viewPanel !== btn.dataset.view;
+        });
+        if (readout) readout.hidden = btn.dataset.view !== 'chart';
+      });
+    });
 
     svg.addEventListener('pointermove', function (e) {
       var r = svg.getBoundingClientRect();
@@ -819,6 +1069,25 @@ Verify {{ tax_year }} tax constants in finance/taxdata.py.</footer>
     });
     svg.addEventListener('blur', deactivate);
   });
+
+  // Rail: highlight whichever section is currently under the reader.
+  var links = Array.prototype.slice.call(
+    document.querySelectorAll('#rail-nav a'));
+  var targets = links.map(function (a) {
+    return document.getElementById(a.getAttribute('href').slice(1));
+  }).filter(Boolean);
+  if (targets.length && 'IntersectionObserver' in window) {
+    var visible = {};
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { visible[e.target.id] = e.isIntersecting; });
+      var current = null;
+      targets.forEach(function (t) { if (!current && visible[t.id]) current = t.id; });
+      links.forEach(function (a) {
+        a.classList.toggle('on', a.getAttribute('href') === '#' + current);
+      });
+    }, { rootMargin: '-20% 0px -70% 0px' });
+    targets.forEach(function (t) { io.observe(t); });
+  }
 })();
 </script>
 </body>
