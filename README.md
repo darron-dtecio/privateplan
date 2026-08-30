@@ -108,6 +108,33 @@ configuration, and troubleshooting.
 
 ---
 
+## What it looks like
+
+Every screenshot below is the fictional Chen household from `samples/` — the same
+thing you get from **Load both**, so nothing here is anyone's real money.
+
+**The workspace** at `/finance`. Each step knows whether it is stale, so the page
+always tells you what to run next.
+
+![The PrivatePlan workspace, showing the pipeline steps and the documents in the inbox](docs/images/workspace.png)
+
+**The retirement dashboard.** The answer first — the share of ten thousand
+simulated markets the plan survives — then the arithmetic that produced it.
+
+![The retirement dashboard: success probability, net worth, savings rate, and where each month's gross pay goes](docs/images/retirement-dashboard.png)
+
+**The portfolio view.** Every holding from your brokerage exports, with fund
+costs against category peers and a look-through to what you actually own.
+
+![The portfolio dashboard: totals, cost basis, unrealised gain, and what the fund sleeve costs](docs/images/portfolio-lookthrough.png)
+
+**A stock dashboard.** Twelve reported quarters and twelve forecast ones, with
+the findings written from the fetched numbers by `pipeline/narrate.py`.
+
+![The AAPL stock dashboard: key metrics, computed narrative, and the quarterly revenue chart with forecast band](docs/images/stock-analyzer.png)
+
+---
+
 ## How it works
 
 ```
