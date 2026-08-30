@@ -23,6 +23,17 @@ git ls-files | grep -E "^(finance_data|data|dashboards)/"   # must be empty
 If you need to share a dashboard for a bug report, load the sample household and
 screenshot that.
 
+There is a scrub gate for this:
+
+```bash
+python scripts/scrub_check.py
+```
+
+It scans the tree for personal identifiers, absolute home paths, private network
+addresses, leftover fixtures and stray control characters, and exits non-zero on
+any hit. Run it before any release, and add a pattern whenever you find a class
+of leak it missed.
+
 ## Conventions worth knowing
 
 **Every module carries its own self-test.** Look at the bottom of any file in
