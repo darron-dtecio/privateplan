@@ -1,0 +1,21 @@
+{
+  "_doc": "Schema for a state income-tax table. One file per state, named <code>.json in lowercase. See docs/ADDING_A_STATE.md.",
+  "code": "Two-letter USPS code, uppercase.",
+  "name": "Full state name, for display.",
+  "tax_year": "The year these figures describe.",
+  "source": "Where the numbers came from. Required — a table with no citation cannot be verified.",
+  "kind": "'brackets' | 'flat' | 'none'.",
+  "rate": "For kind='flat' only: the single marginal rate as a fraction.",
+  "estimate": "true when the figures are an approximation rather than a published schedule. Surfaced to the user.",
+  "filing_status": {
+    "_doc": "For kind='brackets'. Keys are mfj | single | hoh | mfs. Each holds 'brackets' ([upper, rate] pairs, null upper = unbounded) and 'standard_deduction'. A missing status falls back to 'single', then to the flat rate.",
+    "example": {"brackets": [[10000, 0.02], [null, 0.05]], "standard_deduction": 5000}
+  },
+  "taxes_social_security": "bool. false means SS benefits are fully exempt from state tax.",
+  "taxes_retirement_income": "'full' only, today. Partial exclusions (IL, PA, NY, MS...) are NOT yet modeled -- see the Limitations section of the README.",
+  "surtaxes": "Optional list of {name, threshold, rate}: an extra rate on taxable income above the threshold.",
+  "property_tax_growth": "Optional. Annual growth of assessed value, as a fraction. Overrides the national default when a state caps it.",
+  "insurance_inflation": "Optional. Annual homeowners-premium growth, as a fraction.",
+  "index_brackets": "bool. false when the state does not inflation-index its brackets -- bracket creep is then modeled correctly over a long projection.",
+  "local_tax_note": "Optional string shown to the user where meaningful local income taxes exist (NYC, Philadelphia, Ohio municipalities)."
+}

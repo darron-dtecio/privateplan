@@ -1,0 +1,29 @@
+{
+  "_note": "Symbols with no company fundamentals in SEC EDGAR: funds, ETFs and collective trusts. The analyzer cannot model them as operating companies, so the portfolio holds them as exposures instead. Extend this locally with finance_data/funds_extra.json (same shape, gitignored) rather than editing this file, so updates do not clobber your additions.",
+
+  "SPY": "S&P 500 ETF", "VOO": "S&P 500 ETF", "IVV": "S&P 500 ETF",
+  "SPLG": "S&P 500 ETF", "FXAIX": "S&P 500 index fund", "VFIAX": "S&P 500 index fund",
+  "VTI": "US total market ETF", "ITOT": "US total market ETF",
+  "VTSAX": "US total market index fund", "FSKAX": "US total market index fund",
+  "QQQ": "Nasdaq 100 ETF", "QQQM": "Nasdaq 100 ETF",
+  "VUG": "US large-cap growth ETF", "VTV": "US large-cap value ETF",
+  "IWM": "US small-cap ETF", "VB": "US small-cap ETF", "VO": "US mid-cap ETF",
+  "SCHD": "dividend equity ETF", "VYM": "high dividend yield ETF",
+  "VIG": "dividend appreciation ETF", "DGRO": "dividend growth ETF",
+
+  "VXUS": "total international equity ETF", "VEA": "developed markets ETF",
+  "VWO": "emerging markets ETF", "IEFA": "developed markets ETF",
+  "IEMG": "emerging markets ETF", "VT": "global total market ETF",
+
+  "BND": "US total bond market ETF", "AGG": "US aggregate bond ETF",
+  "BNDX": "international bond ETF", "VCIT": "intermediate corporate bond ETF",
+  "TLT": "20+ year Treasury ETF", "IEF": "7-10 year Treasury ETF",
+  "SHY": "1-3 year Treasury ETF", "TIP": "TIPS ETF", "MUB": "municipal bond ETF",
+  "VTEB": "municipal bond ETF", "HYG": "high yield corporate bond ETF",
+
+  "GLD": "gold ETF", "IAU": "gold ETF", "VNQ": "US real estate ETF",
+  "XLK": "technology sector ETF", "XLF": "financials sector ETF",
+  "XLE": "energy sector ETF", "XLV": "health care sector ETF",
+  "XLI": "industrials sector ETF", "XLP": "consumer staples sector ETF",
+  "XLY": "consumer discretionary sector ETF", "XLU": "utilities sector ETF"
+}

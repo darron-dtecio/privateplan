@@ -1,0 +1,749 @@
+{
+ "version": 2,
+ "_note": "FICTIONAL sample household. Every figure here is invented. Built by running the real extract pipeline over samples/documents/, so the document-derived sections are exactly what the parsers emit -- regenerate with samples/build_profile.py. Safe to commit, safe to read, safe to hand to an AI assistant. See samples/README.md.",
+ "saved_at": "2026-08-29T12:47:55",
+ "household": {
+  "self_birthdate": "1978-04-12",
+  "spouse_birthdate": "1979-09-30",
+  "state": "CA",
+  "filing_status": "mfj",
+  "retirement_date": "2040-06"
+ },
+ "income": {
+  "salary_annual": 185000,
+  "pay_frequency": "biweekly",
+  "k401_pct": 10,
+  "employer_match_pct": 4,
+  "employer_match_annual": 7400,
+  "other_pretax_annual": 6000,
+  "spouse_income_annual": 95000
+ },
+ "social_security": {
+  "self": {
+   "62": 2480,
+   "67": 3540,
+   "70": 4390
+  },
+  "spouse": {
+   "62": 1610,
+   "67": 2300,
+   "70": 2850
+  },
+  "spouse_source": "spouse-social-security-statement.pdf",
+  "spouse_own_monthly_fra": 2300,
+  "claim_age_self": 67,
+  "claim_age_spouse": 67,
+  "cola": 0.025,
+  "compare_claim_ages": [
+   62,
+   67,
+   70
+  ]
+ },
+ "mortgage": {
+  "balance": 268000,
+  "rate": 0.035,
+  "pi_payment": 2180,
+  "escrow_payment": 780,
+  "next_due": "2026-09",
+  "maturity": "2038-04",
+  "extra_monthly": 0,
+  "escrow_detail": {
+   "property_tax_annual": 6900,
+   "insurance_annual": 2460,
+   "total_annual": 9360,
+   "reserve_monthly": 780,
+   "shortage": 0,
+   "effective_date": "2026-07"
+  }
+ },
+ "home": {
+  "value": 780000
+ },
+ "assets": [
+  {
+   "name": "HSA",
+   "type": "hsa",
+   "balance": 48000,
+   "annual_contribution": 4400
+  },
+  {
+   "name": "Savings / emergency fund",
+   "type": "cash",
+   "balance": 60000,
+   "annual_contribution": 0
+  },
+  {
+   "name": "401k Plan",
+   "type": "401k",
+   "balance": 612000.0,
+   "annual_contribution": 0,
+   "source": "auto"
+  },
+  {
+   "name": "Spouse 401k Plan",
+   "type": "401k",
+   "balance": 290000.0,
+   "annual_contribution": 0,
+   "source": "auto"
+  },
+  {
+   "name": "401k R/O IRA",
+   "type": "trad_ira",
+   "balance": 158000.0,
+   "annual_contribution": 0,
+   "source": "auto"
+  },
+  {
+   "name": "Roth IRA",
+   "type": "roth",
+   "balance": 94000.0,
+   "annual_contribution": 0,
+   "source": "auto"
+  },
+  {
+   "name": "Brokerage",
+   "type": "brokerage",
+   "balance": 248000.0,
+   "annual_contribution": 0,
+   "source": "auto"
+  }
+ ],
+ "liabilities": [
+  {
+   "name": "Mortgage",
+   "balance": 268000,
+   "rate": 0.035,
+   "payment_monthly": 2960
+  },
+  {
+   "name": "Auto loan",
+   "balance": 18400,
+   "rate": 0.0599,
+   "payment_monthly": 540
+  }
+ ],
+ "holdings": [
+  {
+   "symbol": "FXAIX",
+   "value": 380000.0,
+   "cost_basis": null,
+   "quantity": 1902.44,
+   "description": "FIDELITY 500 INDEX FUND",
+   "qty_covers": 380000.0
+  },
+  {
+   "symbol": "VTSAX",
+   "value": 290000.0,
+   "cost_basis": null,
+   "quantity": 2077.51,
+   "description": "VANGUARD TOTAL STOCK MKT IDX ADM",
+   "qty_covers": 290000.0
+  },
+  {
+   "symbol": "BND",
+   "value": 192000.0,
+   "cost_basis": null,
+   "quantity": 2637.37,
+   "description": "VANGUARD TOTAL BOND MARKET ETF",
+   "qty_covers": 192000.0
+  },
+  {
+   "symbol": "VTI",
+   "value": 145000.0,
+   "cost_basis": 98000.0,
+   "quantity": 456.19,
+   "description": "VANGUARD TOTAL STOCK MARKET ETF",
+   "qty_covers": 145000.0,
+   "cost_covers": 145000.0
+  },
+  {
+   "symbol": "VUG",
+   "value": 132000.0,
+   "cost_basis": null,
+   "quantity": 316.28,
+   "description": "VANGUARD GROWTH ETF",
+   "qty_covers": 132000.0
+  },
+  {
+   "symbol": "VXUS",
+   "value": 66000.0,
+   "cost_basis": null,
+   "quantity": 950.36,
+   "description": "VANGUARD TOTAL INTL STOCK ETF",
+   "qty_covers": 66000.0
+  },
+  {
+   "symbol": "VOO",
+   "value": 62000.0,
+   "cost_basis": null,
+   "quantity": 106.72,
+   "description": "VANGUARD S&P 500 ETF",
+   "qty_covers": 62000.0
+  },
+  {
+   "symbol": "SPY",
+   "value": 55000.0,
+   "cost_basis": 41000.0,
+   "quantity": 86.94,
+   "description": "SPDR S&P 500 ETF TRUST",
+   "qty_covers": 55000.0,
+   "cost_covers": 55000.0
+  },
+  {
+   "symbol": "SCHD",
+   "value": 32000.0,
+   "cost_basis": null,
+   "quantity": 1141.55,
+   "description": "SCHWAB US DIVIDEND EQUITY ETF",
+   "qty_covers": 32000.0
+  },
+  {
+   "symbol": "AAPL",
+   "value": 22000.0,
+   "cost_basis": 12000.0,
+   "quantity": 88.71,
+   "description": "APPLE INC",
+   "qty_covers": 22000.0,
+   "cost_covers": 22000.0
+  },
+  {
+   "symbol": "MSFT",
+   "value": 18000.0,
+   "cost_basis": 19000.0,
+   "quantity": 34.15,
+   "description": "MICROSOFT CORP",
+   "qty_covers": 18000.0,
+   "cost_covers": 18000.0
+  },
+  {
+   "symbol": "SPAXX",
+   "value": 8000.0,
+   "cost_basis": 8000.0,
+   "quantity": 8000.0,
+   "description": "FIDELITY GOVERNMENT MONEY MARKET",
+   "qty_covers": 8000.0,
+   "cost_covers": 8000.0
+  }
+ ],
+ "equity_comp": {
+  "symbol": null,
+  "price_manual": 118.5,
+  "_price_note": "The sample employer is fictional, so a stated price stands in for a live quote -- the same thing you would do for a private-company award with a 409A valuation and no ticker. Set equity_comp.symbol to a real ticker to price vests from the market instead.",
+  "enabled": true,
+  "include_conditional": true,
+  "vests": [
+   {
+    "date": "2026-11-15",
+    "shares": 210.0,
+    "award_date": "2023-11-15",
+    "award_type": "RSU",
+    "award_id": "RSU-2023-A",
+    "strike": null,
+    "condition": null,
+    "is_option": false
+   },
+   {
+    "date": "2027-02-15",
+    "shares": 185.0,
+    "award_date": "2024-02-15",
+    "award_type": "RSU",
+    "award_id": "RSU-2024-A",
+    "strike": null,
+    "condition": null,
+    "is_option": false
+   },
+   {
+    "date": "2027-05-15",
+    "shares": 185.0,
+    "award_date": "2024-02-15",
+    "award_type": "RSU",
+    "award_id": "RSU-2024-A",
+    "strike": null,
+    "condition": null,
+    "is_option": false
+   },
+   {
+    "date": "2027-11-15",
+    "shares": 195.0,
+    "award_date": "2024-11-15",
+    "award_type": "RSU",
+    "award_id": "RSU-2024-B",
+    "strike": null,
+    "condition": null,
+    "is_option": false
+   },
+   {
+    "date": "2028-02-15",
+    "shares": 160.0,
+    "award_date": "2025-02-15",
+    "award_type": "RSU",
+    "award_id": "RSU-2025-A",
+    "strike": null,
+    "condition": null,
+    "is_option": false
+   },
+   {
+    "date": "2028-11-15",
+    "shares": 160.0,
+    "award_date": "2025-11-15",
+    "award_type": "RSU",
+    "award_id": "RSU-2025-B",
+    "strike": null,
+    "condition": "vests only if the performance multiplier is met",
+    "is_option": false
+   },
+   {
+    "date": "2029-02-15",
+    "shares": 140.0,
+    "award_date": "2026-02-15",
+    "award_type": "RSU",
+    "award_id": "RSU-2026-A",
+    "strike": null,
+    "condition": null,
+    "is_option": false
+   }
+  ],
+  "conditions": [
+   "vests only if the performance multiplier is met"
+  ],
+  "has_options": false,
+  "source_sheet": "csv",
+  "source_files": [
+   "vesting_schedule.csv"
+  ],
+  "as_of": "2026-08-29"
+ },
+ "spending": {
+  "current_monthly": 11350,
+  "retirement_monthly_today": 7600,
+  "observed_medical_monthly": 380,
+  "_note": "retirement_monthly_today excludes mortgage P&I and escrow; the projection adds those separately until the loan matures. Observed recurring medical is removed before explicit retirement healthcare is added, so it is never counted twice."
+ },
+ "spending_detail": {
+  "source_months": 18,
+  "first": "2025-02",
+  "last": "2026-07",
+  "avg_monthly": 11056.46,
+  "median_monthly": 10215.36,
+  "avg_monthly_recent12": 11350.97,
+  "avg_monthly_mortgage": 2960.0,
+  "avg_monthly_ex_mortgage": 8096.46,
+  "categories": [
+   {
+    "name": "mortgage",
+    "total": 53280.0,
+    "monthly": 2960.0,
+    "n": 18
+   },
+   {
+    "name": "groceries",
+    "total": 33110.82,
+    "monthly": 1827.25,
+    "n": 252
+   },
+   {
+    "name": "credit card payment",
+    "total": 16829.37,
+    "monthly": 926.35,
+    "n": 18
+   },
+   {
+    "name": "travel",
+    "total": 13614.48,
+    "monthly": 754.24,
+    "n": 36
+   },
+   {
+    "name": "fuel / auto",
+    "total": 11413.45,
+    "monthly": 666.78,
+    "n": 109
+   },
+   {
+    "name": "shopping / retail",
+    "total": 11235.57,
+    "monthly": 623.44,
+    "n": 162
+   },
+   {
+    "name": "home improvement / repairs",
+    "total": 9800.0,
+    "monthly": 612.5,
+    "n": 1
+   },
+   {
+    "name": "other / uncategorized",
+    "total": 9720.0,
+    "monthly": 540.0,
+    "n": 18
+   },
+   {
+    "name": "utilities",
+    "total": 7454.79,
+    "monthly": 411.9,
+    "n": 36
+   },
+   {
+    "name": "property tax / insurance",
+    "total": 6974.29,
+    "monthly": 389.41,
+    "n": 18
+   },
+   {
+    "name": "dining",
+    "total": 5695.79,
+    "monthly": 316.31,
+    "n": 198
+   },
+   {
+    "name": "home & yard services",
+    "total": 4853.27,
+    "monthly": 270.79,
+    "n": 18
+   },
+   {
+    "name": "phone / internet / TV",
+    "total": 4361.31,
+    "monthly": 240.62,
+    "n": 18
+   },
+   {
+    "name": "medical",
+    "total": 3871.31,
+    "monthly": 214.95,
+    "n": 18
+   },
+   {
+    "name": "cash / checks",
+    "total": 3600.0,
+    "monthly": 200.0,
+    "n": 18
+   },
+   {
+    "name": "pets / veterinary",
+    "total": 1095.91,
+    "monthly": 60.94,
+    "n": 18
+   },
+   {
+    "name": "subscriptions",
+    "total": 737.64,
+    "monthly": 40.98,
+    "n": 36
+   }
+  ],
+  "monthly_total": {
+   "2025-02": 10458.66,
+   "2025-03": 10212.1,
+   "2025-04": 10204.08,
+   "2025-05": 10131.04,
+   "2025-06": 10144.51,
+   "2025-07": 10154.75,
+   "2025-08": 10057.38,
+   "2025-09": 19683.51,
+   "2025-10": 10251.59,
+   "2025-11": 10015.94,
+   "2025-12": 10238.66,
+   "2026-01": 10328.35,
+   "2026-02": 10088.53,
+   "2026-03": 14540.52,
+   "2026-04": 10356.77,
+   "2026-05": 10218.62,
+   "2026-06": 10277.03,
+   "2026-07": 10285.96
+  },
+  "sources": [
+   "checking",
+   "card_ledger",
+   "HSA (Custodian)"
+  ],
+  "reconciliation": [
+   {
+    "label": "card_ledger",
+    "issuer": null,
+    "months_covered": 18,
+    "first_month": "2025-02",
+    "last_month": "2026-07",
+    "bank_payments_in_window": 0.0,
+    "card_payments_recorded": 0,
+    "delta": 0.0,
+    "card_net_charges": 71766.02,
+    "payments_removed_from_checking": 0.0,
+    "uncovered_months": []
+   }
+  ],
+  "one_offs": [
+   {
+    "month": "2025-09",
+    "category": "home improvement / repairs",
+    "amount": 9800.0,
+    "description": "SUMMIT HVAC REPLACEMENT"
+   },
+   {
+    "month": "2026-03",
+    "category": "fuel / auto",
+    "amount": 4400.0,
+    "description": "AUTO REPAIR TRANSMISSION"
+   }
+  ],
+  "one_off_monthly": 887.5,
+  "one_off_total": 14200.0,
+  "typical_monthly": 10168.96,
+  "recurring": {
+   "avg_monthly": 10168.96,
+   "median_monthly": 10179.42,
+   "avg_monthly_recent12": 10167.64,
+   "avg_monthly_mortgage": 2960.0,
+   "avg_monthly_ex_mortgage": 7208.96,
+   "monthly_total": {
+    "2025-02": 10458.66,
+    "2025-03": 10212.1,
+    "2025-04": 10204.08,
+    "2025-05": 10131.04,
+    "2025-06": 10144.51,
+    "2025-07": 10154.75,
+    "2025-08": 10057.38,
+    "2025-09": 9883.51,
+    "2025-10": 10251.59,
+    "2025-11": 10015.94,
+    "2025-12": 10238.66,
+    "2026-01": 10328.35,
+    "2026-02": 10088.53,
+    "2026-03": 10140.52,
+    "2026-04": 10356.77,
+    "2026-05": 10218.62,
+    "2026-06": 10277.03,
+    "2026-07": 10285.96
+   },
+   "categories": [
+    {
+     "name": "mortgage",
+     "total": 53280.0,
+     "monthly": 2960.0,
+     "n": 18
+    },
+    {
+     "name": "groceries",
+     "total": 33110.82,
+     "monthly": 1827.25,
+     "n": 252
+    },
+    {
+     "name": "credit card payment",
+     "total": 16829.37,
+     "monthly": 926.35,
+     "n": 18
+    },
+    {
+     "name": "travel",
+     "total": 13614.48,
+     "monthly": 754.24,
+     "n": 36
+    },
+    {
+     "name": "shopping / retail",
+     "total": 11235.57,
+     "monthly": 623.44,
+     "n": 162
+    },
+    {
+     "name": "other / uncategorized",
+     "total": 9720.0,
+     "monthly": 540.0,
+     "n": 18
+    },
+    {
+     "name": "utilities",
+     "total": 7454.79,
+     "monthly": 411.9,
+     "n": 36
+    },
+    {
+     "name": "fuel / auto",
+     "total": 7013.45,
+     "monthly": 391.78,
+     "n": 109
+    },
+    {
+     "name": "property tax / insurance",
+     "total": 6974.29,
+     "monthly": 389.41,
+     "n": 18
+    },
+    {
+     "name": "dining",
+     "total": 5695.79,
+     "monthly": 316.31,
+     "n": 198
+    },
+    {
+     "name": "home & yard services",
+     "total": 4853.27,
+     "monthly": 270.79,
+     "n": 18
+    },
+    {
+     "name": "phone / internet / TV",
+     "total": 4361.31,
+     "monthly": 240.62,
+     "n": 18
+    },
+    {
+     "name": "medical",
+     "total": 3871.31,
+     "monthly": 214.95,
+     "n": 18
+    },
+    {
+     "name": "cash / checks",
+     "total": 3600.0,
+     "monthly": 200.0,
+     "n": 18
+    },
+    {
+     "name": "pets / veterinary",
+     "total": 1095.91,
+     "monthly": 60.94,
+     "n": 18
+    },
+    {
+     "name": "subscriptions",
+     "total": 737.64,
+     "monthly": 40.98,
+     "n": 36
+    }
+   ]
+  }
+ },
+ "payroll_detail": {
+  "_note": "Normally read from a pay stub PDF. The sample set ships CSV exports only (hand-built PDFs prove nothing about real ones), so these are stated here instead. They are what let the 401(k) audit cross-check the deferral rate.",
+  "k401_current": 711.54,
+  "k401_ytd": 10673.1,
+  "k401_match_current": 284.62,
+  "base_salary_current": 7115.38,
+  "base_salary_ytd": 106730.7,
+  "gross_ytd": 112400.0,
+  "pay_frequency": "biweekly",
+  "periods_per_year": 26,
+  "history": []
+ },
+ "investment_activity": {
+  "n_transactions": 88,
+  "n_months": 18,
+  "first_month": "2025-02",
+  "last_month": "2026-07",
+  "groups": [
+   {
+    "name": "withdrawal / rollover",
+    "n": 1,
+    "total": 42000.0
+   },
+   {
+    "name": "contribution",
+    "n": 36,
+    "total": 36220.4
+   },
+   {
+    "name": "dividend / interest",
+    "n": 6,
+    "total": 3884.93
+   },
+   {
+    "name": "HSA / medical spending",
+    "n": 36,
+    "total": -3871.31
+   },
+   {
+    "name": "fee",
+    "n": 6,
+    "total": -3735.52
+   },
+   {
+    "name": "shares deposited (RSU/ESPP)",
+    "n": 3,
+    "total": 0.0
+   }
+  ],
+  "by_account": {
+   "401K(*7788)": 36220.4,
+   "HSA(*3391)": -3871.31,
+   "IRA(*1234)": 45884.93,
+   "BROKERAGE(*1234)": -3735.52
+  },
+  "hsa_spending_monthly": 214.95,
+  "contributions_total": 36220.4,
+  "contributions_monthly": 2263.78,
+  "dividends_total": 3884.93,
+  "rsu_espp_total": 0.0,
+  "rollover_total": 42000.0,
+  "loan_repayment_total": 0.0,
+  "loan_repayment_monthly": 0.0,
+  "has_plan_loan": false,
+  "loan_active": false,
+  "loan_last_repayment_month": null,
+  "loan_months_since_last_repayment": null,
+  "loan_final_payment": null,
+  "loan_typical_monthly_repayment": 0.0,
+  "loan_payoff_detected": false,
+  "fees_total": -3735.52,
+  "trades": [],
+  "trade_count": 0,
+  "buy_count": 0,
+  "buy_total": 0,
+  "sales": [],
+  "sales_count": 0,
+  "sales_proceeds": 0,
+  "sales_with_known_basis": 0,
+  "sales_basis_coverage_pct": null,
+  "realized_cost_basis": 0,
+  "realized_gain": null,
+  "realized_gain_pct": null,
+  "profitable_sales": 0,
+  "loss_sales": 0,
+  "break_even_sales": 0,
+  "unknown_sales": 0,
+  "reversed_trade_pairs_excluded": 0,
+  "realized_basis_method": "FIFO using purchase lots present in imported activity",
+  "activity_source_rows": 88,
+  "activity_unique_rows": 88,
+  "activity_duplicate_rows_excluded": 0
+ },
+ "healthcare": {
+  "enabled": true,
+  "source_year": 2026,
+  "pre_medicare_monthly_per_person": 1850,
+  "medicare_monthly_per_person": 700,
+  "inflation": 0.06
+ },
+ "capital_expenses": {
+  "home_reserve_pct": 0.01,
+  "home_reserve_inflation": 0.035,
+  "home_reserve_start": "retirement",
+  "schedules": [
+   {
+    "id": "vehicle-replacement",
+    "name": "Vehicle replacement",
+    "amount_today": 45000,
+    "first_date": "2040-06",
+    "interval_years": 10,
+    "inflation": null,
+    "end_year": null,
+    "enabled": true
+   }
+  ]
+ },
+ "assumptions": {
+  "risk": "moderate",
+  "inflation": 0.025,
+  "horizon_age": 95,
+  "return_override": null,
+  "compare_claim_ages": [
+   62,
+   67,
+   70
+  ],
+  "monte_carlo_paths": 10000,
+  "taxable_basis_unknown_is_gain": true
+ }
+}

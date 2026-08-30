@@ -1,0 +1,13 @@
+{
+  "code": "GA",
+  "name": "Georgia",
+  "tax_year": 2026,
+  "source": "Georgia flat income tax rate, estimated for 2026. Verify with the state revenue department.",
+  "kind": "flat",
+  "rate": 0.0519,
+  "estimate": true,
+  "taxes_social_security": false,
+  "taxes_retirement_income": "full",
+  "index_brackets": false,
+  "local_tax_note": "Georgia's age-65 retirement-income exclusion is not modeled here."
+}

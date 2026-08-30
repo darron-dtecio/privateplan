@@ -1,0 +1,159 @@
+{% extends "_base.html.j2" %}
+{% block title %}Home — Finance &amp; Investing{% endblock %}
+{% block heading %}Finance &amp; Investing{% endblock %}
+{% block subheading %}Two workspaces, one local server — everything stays on this machine{% endblock %}
+
+{% macro money(v, dash="—") %}{% if v is none %}{{ dash }}{% elif v|abs >= 1000000 %}${{ "%.2f"|format(v/1000000) }}M{% elif v|abs >= 1000 %}${{ "%.1f"|format(v/1000) }}K{% else %}${{ "%.0f"|format(v) }}{% endif %}{% endmacro %}
+
+{% block content %}
+<style>
+.apps { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+@media (max-width: 860px) { .apps { grid-template-columns: 1fr; } }
+.app { background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  padding: 20px 22px; display: flex; flex-direction: column; }
+.app h2 { font-size: 19px; margin: 0 0 2px; }
+.app .lead { color: var(--ink2); font-size: 13.5px; margin-bottom: 14px; }
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; margin: 4px 0 12px; }
+.kpi { border-left: 3px solid var(--border); padding-left: 10px; }
+.kpi .k { font-size: 12px; color: var(--muted); display: block; }
+.kpi .v { font-size: 21px; font-weight: 600; line-height: 1.25; font-variant-numeric: tabular-nums; }
+.kpi .v.good { color: var(--good); } .kpi .v.bad { color: var(--bad); }
+.kpi .v.warn { color: var(--warn); }
+.app .grow { flex: 1; }
+.applinks { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.applinks a { display: inline-block; background: var(--s1); color: #fff; border-radius: 8px;
+  padding: 7px 14px; font-size: 13.5px; font-weight: 600; text-decoration: none; }
+.applinks a.alt { background: var(--surface); color: var(--ink2); border: 1px solid var(--border); }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.tag { font-size: 12px; color: var(--ink2); border: 1px solid var(--border);
+  border-radius: 999px; padding: 1px 9px; font-variant-numeric: tabular-nums; }
+.todo { margin: 10px 0 0; padding-left: 18px; font-size: 13px; color: var(--ink2); }
+.todo li { margin: 3px 0; }
+.empty { color: var(--muted); font-size: 13px; padding: 10px 0; }
+</style>
+
+<div class="apps">
+
+  <div class="app">
+    <h2>Personal Finance</h2>
+    <div class="lead">Retirement plan built from your own documents — paystub, mortgage,
+      escrow, Social Security, bank and card activity. Nothing leaves this machine.</div>
+
+    {% if finance.ready %}
+    <div class="kpis">
+      <div class="kpi"><span class="k">Net worth</span>
+        <span class="v">{{ money(finance.net_worth) }}</span></div>
+      <div class="kpi"><span class="k">Plan success</span>
+        <span class="v {{ 'good' if finance.success and finance.success >= 0.85 else ('warn' if finance.success and finance.success >= 0.7 else 'bad') }}">
+          {{ "%.0f%%"|format(finance.success * 100) if finance.success is not none else "—" }}</span></div>
+      <div class="kpi"><span class="k">Monthly surplus</span>
+        <span class="v {{ 'good' if finance.surplus and finance.surplus >= 0 else 'bad' }}">
+          {{ money(finance.surplus) }}</span></div>
+      <div class="kpi"><span class="k">Sustainable spending</span>
+        <span class="v">{{ money(finance.sustainable) }}<span style="font-size:13px;color:var(--muted)">/mo</span></span></div>
+    </div>
+    <div class="tags">
+      <span class="tag">investable {{ money(finance.portfolio) }}</span>
+      <span class="tag">debt {{ money(finance.debt) }}</span>
+      <span class="tag">spending {{ money(finance.spending) }}/mo</span>
+      {% if finance.retire_age %}<span class="tag">retire at {{ finance.retire_age }}</span>{% endif %}
+    </div>
+
+    {% if finance.actions %}
+    <ul class="todo">
+      {% for r in finance.actions %}<li>{{ r.title }}</li>{% endfor %}
+      {% if finance.n_actions > finance.actions|length %}
+      <li class="mut">+{{ finance.n_actions - finance.actions|length }} more on the dashboard</li>
+      {% endif %}
+    </ul>
+    {% endif %}
+    {% if finance.gaps %}
+    <p class="mut" style="margin:8px 0 0">{{ finance.gaps|length }} profile field(s) still missing — see the dashboard banner.</p>
+    {% endif %}
+    <div class="grow"></div>
+    <p class="mut" style="margin:10px 0 0">Last analysed {{ finance.generated or "—" }}</p>
+    <div class="applinks">
+      {% if finance.dashboard %}<a href="/finance/dashboard">Open dashboard</a>{% endif %}
+      <a href="/finance" class="alt">Workspace</a>
+      <a href="/finance/intake" class="alt">Edit profile</a>
+    </div>
+    {% else %}
+    <div class="empty">No analysis yet. Add your documents in the workspace, fill in the
+      intake form, then run Analyze and Render.</div>
+    <div class="grow"></div>
+    <div class="applinks"><a href="/finance">Get started</a></div>
+    {% endif %}
+  </div>
+
+  <div class="app">
+    <h2>Stock Investments</h2>
+    <div class="lead">SEC-backed analysis of every company you hold, plus a combined
+      portfolio view weighted by what you actually own.</div>
+
+    {% if invest.ready %}
+    <div class="kpis">
+      <div class="kpi"><span class="k">Portfolio value</span>
+        <span class="v">{{ money(invest.total) }}</span></div>
+      <div class="kpi"><span class="k">Top-5 concentration</span>
+        <span class="v {{ 'bad' if invest.top5_pct and invest.top5_pct > 0.4 else ('warn' if invest.top5_pct and invest.top5_pct > 0.3 else '') }}">
+          {{ "%.1f%%"|format(invest.top5_pct * 100) if invest.top5_pct else "—" }}</span></div>
+      <div class="kpi"><span class="k">Weighted fwd P/E</span>
+        <span class="v">{{ "%.1f"|format(invest.fwd_pe) if invest.fwd_pe else "—" }}</span></div>
+      <div class="kpi"><span class="k">Weighted beta</span>
+        <span class="v {{ 'warn' if invest.beta and invest.beta > 1.2 else '' }}">
+          {{ "%.2f"|format(invest.beta) if invest.beta else "—" }}</span></div>
+      {% if invest.perf and invest.perf.cost_basis %}
+      <div class="kpi"><span class="k">Cost basis</span>
+        <span class="v">{{ money(invest.perf.cost_basis) }}</span></div>
+      <div class="kpi"><span class="k">Unrealised gain/loss</span>
+        <span class="v {{ 'good' if invest.perf.gain >= 0 else 'bad' }}">
+          {{ money(invest.perf.gain) }}</span></div>
+      <div class="kpi"><span class="k">Return on cost</span>
+        <span class="v {{ 'good' if invest.perf.gain_pct >= 0 else 'bad' }}">
+          {{ "%+.1f%%"|format(invest.perf.gain_pct * 100) }}</span></div>
+      {% endif %}
+    </div>
+    {% if invest.perf and invest.perf.cost_basis and invest.perf.covered_pct
+          and invest.perf.covered_pct < 0.999 %}
+    <p class="mut" style="margin:6px 0 0">Performance covers
+      {{ "%.0f%%"|format(invest.perf.covered_pct * 100) }} of the portfolio —
+      {{ invest.perf.positions_with_cost }} of {{ invest.perf.positions_total }}
+      positions report a cost basis.</p>
+    {% endif %}
+    <div class="tags">
+      <span class="tag">{{ invest.n_stocks }} stocks {{ money(invest.stocks_total) }}</span>
+      <span class="tag">{{ invest.n_funds }} funds {{ money(invest.funds_total) }}</span>
+      <span class="tag">cash {{ money(invest.cash_total) }}</span>
+      {% if invest.cagr %}<span class="tag">2y rev CAGR {{ "%.0f%%"|format(invest.cagr * 100) }}</span>{% endif %}
+      {% if invest.upside %}<span class="tag">upside {{ "%+.0f%%"|format(invest.upside * 100) }}</span>{% endif %}
+    </div>
+    {% if invest.top %}
+    <ul class="todo">
+      <li>Largest positions:
+        {% for t in invest.top %}<a href="/dashboard/{{ t.ticker }}">{{ t.ticker }}</a>
+          {{- " (%.1f%%)"|format(t.weight * 100) }}{{ ", " if not loop.last }}{% endfor %}</li>
+    </ul>
+    {% endif %}
+    <div class="grow"></div>
+    <p class="mut" style="margin:10px 0 0">{{ invest.n_dashboards }} dashboards ·
+      {{ invest.n_tracked }} tickers tracked · portfolio built {{ invest.generated or "—" }}</p>
+    <div class="applinks">
+      {% if invest.view %}<a href="/finance/portfolio">Portfolio view</a>{% endif %}
+      <a href="/stocks" class="alt">All tickers</a>
+    </div>
+    {% else %}
+    <div class="empty">No portfolio view yet. Analyze your holdings from the finance
+      workspace, or analyze tickers individually.</div>
+    <div class="grow"></div>
+    <div class="applinks"><a href="/stocks">Browse tickers</a></div>
+    {% endif %}
+  </div>
+
+</div>
+
+<div class="note">
+  The two workspaces share one dataset: holdings extracted from your brokerage statements
+  drive which companies get analyzed, and the resulting fundamentals feed the combined
+  portfolio view. Personal data lives in <code>finance_data/</code>, which is gitignored.
+</div>
+{% endblock %}

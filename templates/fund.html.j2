@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ f.symbol }} — Fund Profile</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb;
+  --ink: #0b0b0b; --ink2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --baseline: #c3c2b7; --border: rgba(11,11,11,0.10);
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #8b5cf6;
+  --good: #006300; --bad: #d03b3b; --warn: #b57d00;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19;
+  --ink: #ffffff; --ink2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #9d7bf0;
+  --good: #0ca30c; --bad: #d03b3b; --warn: #d99e1b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19;
+    --ink: #ffffff; --ink2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #9d7bf0;
+    --good: #0ca30c; --bad: #d03b3b; --warn: #d99e1b;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink);
+  font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 24px 20px 48px; }
+a { color: var(--s1); }
+.card { background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 18px 20px; margin-top: 16px; }
+h1 { font-size: 26px; margin: 0; font-weight: 650; }
+h2 { font-size: 16px; margin: 0 0 4px; font-weight: 600; }
+.sub { color: var(--ink2); font-size: 13px; }
+.mut { color: var(--muted); font-size: 12px; }
+.topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.chip { display: inline-block; font-size: 12px; font-weight: 600; color: var(--ink2);
+  border: 1px solid var(--border); border-radius: 999px; padding: 1px 10px;
+  vertical-align: 3px; margin-left: 8px; }
+#theme-btn { background: var(--surface); color: var(--ink2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 5px 12px; cursor: pointer; font-size: 13px; }
+.back-link { display: inline-flex; align-items: center; gap: 4px; font-size: 13px;
+  font-weight: 600; color: var(--ink2); text-decoration: none; margin-bottom: 8px; }
+.statrow { display: flex; flex-wrap: wrap; gap: 6px 26px; margin-top: 12px; }
+.stat .mut { display: block; }
+.stat b { font-weight: 600; font-size: 14px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 16px; }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.tile .label { font-size: 13px; color: var(--ink2); }
+.tile .value { font-size: 28px; font-weight: 600; line-height: 1.2; margin: 2px 0; }
+.tile .value.good { color: var(--good); } .tile .value.bad { color: var(--bad); }
+.tile .value.warn { color: var(--warn); }
+.tile .sub { font-size: 12px; color: var(--muted); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 860px) { .grid2 { grid-template-columns: 1fr; } }
+ul { margin: 6px 0; padding-left: 20px; }
+li { margin: 3px 0; }
+.chart svg { width: 100%; height: auto; display: block; }
+.chart svg:focus { outline: 2px solid var(--s1); outline-offset: 2px; border-radius: 6px; }
+details { margin-top: 10px; }
+summary { cursor: pointer; color: var(--ink2); font-size: 13px; }
+table { border-collapse: collapse; width: 100%; margin-top: 8px; font-size: 13px; }
+th { text-align: left; color: var(--ink2); font-weight: 600; border-bottom: 1px solid var(--baseline); padding: 5px 10px 5px 0; }
+td { border-bottom: 1px solid var(--grid); padding: 5px 10px 5px 0; font-variant-numeric: tabular-nums; }
+td.lab, th.lab { font-variant-numeric: normal; }
+.num { text-align: right; } th.num { text-align: right; }
+.up { color: var(--good); } .down { color: var(--bad); }
+.overx { overflow-x: auto; }
+.dist { display: flex; height: 14px; border-radius: 7px; overflow: hidden; gap: 2px; margin: 12px 0 6px; }
+.dist span { display: block; min-width: 2px; }
+.dist-legend { display: flex; gap: 4px 18px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink2); }
+.dist-legend .key { display: inline-flex; align-items: center; gap: 6px; }
+.key .swatch { width: 12px; height: 12px; border-radius: 3px; }
+#tt { position: fixed; z-index: 10; pointer-events: none; display: none;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 12px; font-size: 13px; box-shadow: 0 4px 14px rgba(0,0,0,.14); max-width: 280px; }
+#tt .t-label { color: var(--ink2); font-size: 12px; margin-bottom: 3px; }
+#tt .t-row { display: flex; align-items: center; gap: 7px; }
+#tt .t-key { width: 12px; height: 2px; border-radius: 1px; flex: none; }
+#tt .t-val { font-weight: 600; }
+#tt .t-name { color: var(--ink2); font-size: 12px; }
+.crosshair { opacity: 0; }
+.bar { transition: filter .08s; } .bar.hover { filter: brightness(1.18); }
+footer { margin-top: 22px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="topbar">
+  <div>
+    <a href="/stocks" class="back-link">&larr; All tickers</a>
+    <h1>{{ f.name }} <span class="chip">{{ f.symbol }}</span></h1>
+    <div class="sub">{{ f.legal_type or f.quote_type or "Fund" }}{% if f.category %} · {{ f.category }}{% endif %}{% if f.family %} · {{ f.family }}{% endif %}</div>
+  </div>
+  <button id="theme-btn" type="button">◐ Theme</button>
+</div>
+
+<div class="statrow card" style="margin-top:14px">
+  {% for s in stats %}
+  <span class="stat"><span class="mut">{{ s.label }}</span><b>{{ s.value }}</b></span>
+  {% endfor %}
+</div>
+
+{% if narrative %}
+<div class="card">
+  <h2>{{ narrative.headline }}</h2>
+  <p style="margin:6px 0 0">{{ narrative.executive_summary }}</p>
+</div>
+{% endif %}
+
+<div class="card" style="border-left:3px solid var(--s2)">
+  <h2>A fund is not valued like a company</h2>
+  <p class="sub" style="margin:4px 0 0">There is no revenue, no EPS and no price target here — a fund
+  is a wrapper. What decides whether it earns its place is what it costs, what is inside it, and
+  whether that duplicates something you already own. Those are the three things below.</p>
+</div>
+
+<div class="tiles">
+  <div class="tile">
+    <div class="label">Expense ratio</div>
+    <div class="value {{ 'good' if cheaper else ('warn' if vs_cat and not cheaper else '') }}">{{ er or "—" }}</div>
+    <div class="sub">
+      {% if er_zero %}reported as zero — verify with the provider{% elif cat_er %}category average {{ cat_er }}{% else %}no category benchmark{% endif %}
+    </div>
+  </div>
+  <div class="tile">
+    <div class="label">vs category</div>
+    <div class="value {{ 'good' if cheaper else 'bad' }}">{{ vs_cat or "—" }}</div>
+    <div class="sub">{{ "cheaper than peers" if cheaper else ("more expensive than peers" if vs_cat else "—") }}</div>
+  </div>
+  <div class="tile">
+    <div class="label">Cost per $100k held</div>
+    <div class="value">{{ cost_per_100k or "—" }}</div>
+    <div class="sub">every year, deducted from returns</div>
+  </div>
+  {% for p in perf_rows %}
+  <div class="tile">
+    <div class="label">{{ p.label }} return</div>
+    <div class="value {{ p.dir }}">{{ p.value }}</div>
+    <div class="sub">net of fees, per the provider</div>
+  </div>
+  {% endfor %}
+</div>
+
+{% macro chart_card(c) %}
+<div class="card chart" id="{{ c.id }}">
+  <h2>{{ c.title }}</h2>
+  <div class="sub">{{ c.subtitle }}</div>
+  {{ c.svg | safe }}
+  <script type="application/json" class="chart-data">{{ c.data_json | safe }}</script>
+  <details>
+    <summary>Table view</summary>
+    <div class="overx">
+    <table>
+      <tr>{% for h in c.table.head %}<th class="{{ 'num' if not loop.first else 'lab' }}">{{ h }}</th>{% endfor %}</tr>
+      {% for row in c.table.rows %}
+      <tr>{% for cell in row %}<td class="{{ 'num' if not loop.first else 'lab' }}">{{ cell }}</td>{% endfor %}</tr>
+      {% endfor %}
+    </table>
+    </div>
+  </details>
+</div>
+{% endmacro %}
+
+{% if mix %}
+<div class="card">
+  <h2>What the fund holds</h2>
+  <div class="sub">Asset mix as reported by the provider.</div>
+  <div class="dist">
+    {% for m in mix %}<span style="width:{{ m.w }}%;background:{{ m.color }}"></span>{% endfor %}
+  </div>
+  <div class="dist-legend">
+    {% for m in mix %}
+    <span class="key"><span class="swatch" style="background:{{ m.color }}"></span>{{ m.name }} {{ m.pct }}</span>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if charts.holdings %}{{ chart_card(charts.holdings) }}{% else %}
+<div class="card">
+  <h2>Holdings</h2>
+  <p class="sub">No holdings published for this fund. That is normal for bond and Treasury
+  funds, where the exposure is described by duration and credit quality rather than by a
+  list of names.</p>
+</div>
+{% endif %}
+
+{% if charts.sectors %}{{ chart_card(charts.sectors) }}{% endif %}
+
+<div class="card">
+  <h2>Cost over time</h2>
+  <div class="sub">The expense ratio is charged every year on the whole balance, so it compounds against you.</div>
+  {% if er %}
+  <table>
+    <tr><th class="lab">Held for</th><th class="num">Cost per $100,000 (fund flat)</th></tr>
+    <tr><td class="lab">1 year</td><td class="num">{{ cost_per_100k }}</td></tr>
+    <tr><td class="lab">10 years</td><td class="num">{{ "${:,.0f}".format(f.expense_ratio * 100000 * 10) }}</td></tr>
+    <tr><td class="lab">30 years</td><td class="num">{{ "${:,.0f}".format(f.expense_ratio * 100000 * 30) }}</td></tr>
+  </table>
+  <p class="mut" style="margin:8px 0 0">Shown against a flat balance to keep it honest; a growing
+  balance costs proportionally more. A fee is certain, while the return that justifies it is not —
+  which is why a fee above the category average needs a specific reason.</p>
+  {% else %}
+  <p class="sub">No expense ratio published for this fund{% if f.quote_type %} ({{ f.quote_type }}){% endif %}.
+  Closed-end funds in particular often report cost differently — check the provider's fact sheet
+  before assuming it is cheap.</p>
+  {% endif %}
+</div>
+
+{% if narrative %}
+{% if narrative.what_it_is %}
+<div class="card">
+  <h2>What this fund actually is</h2>
+  <p style="margin:6px 0 0">{{ narrative.what_it_is }}</p>
+</div>
+{% endif %}
+
+{% if narrative.cost_verdict %}
+<div class="card">
+  <h2>Is the cost earned?</h2>
+  <p style="margin:6px 0 0">{{ narrative.cost_verdict }}</p>
+</div>
+{% endif %}
+
+{% if n_bull or n_bear %}
+<div class="grid2">
+  {% if n_bull %}
+  <div class="card">
+    <h2>Reasons to hold</h2>
+    <ul>{% for b in n_bull %}<li>{{ b }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+  {% if n_bear %}
+  <div class="card">
+    <h2>Reasons to think again</h2>
+    <ul>{% for b in n_bear %}<li>{{ b }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if narrative.concentration %}
+<div class="card">
+  <h2>What it duplicates</h2>
+  <p style="margin:6px 0 0">{{ narrative.concentration }}</p>
+</div>
+{% endif %}
+
+{% if narrative.risks or narrative.catalysts %}
+<div class="grid2">
+  {% if narrative.risks %}
+  <div class="card">
+    <h2>Risks</h2>
+    <ul>{% for r in narrative.risks %}<li>{{ r }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+  {% if narrative.catalysts %}
+  <div class="card">
+    <h2>What would change the picture</h2>
+    <ul>{% for c in narrative.catalysts %}<li>{{ c }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if narrative.social_sentiment %}
+<div class="card">
+  <h2>What people are saying</h2>
+  <p style="margin:6px 0 0">{{ narrative.social_sentiment }}</p>
+</div>
+{% endif %}
+
+{% if n_sources %}
+<div class="card">
+  <h2>Sources</h2>
+  <ul>{% for s in n_sources %}<li><a href="{{ s.url }}" target="_blank" rel="noopener">{{ s.label }}</a></li>{% endfor %}</ul>
+</div>
+{% endif %}
+{% endif %}
+
+<footer class="mut">{{ f.symbol }} fund profile · data from Yahoo Finance{% if expense_source %}, expense ratio via {{ expense_source }}{% endif %} ·
+fetched {{ fetched_at }}. Holding weights are the provider's latest disclosure and cover only part
+of most funds. Not investment advice.</footer>
+</div>
+
+<div id="tt" role="status"></div>
+
+<script>
+(function () {
+  var btn = document.getElementById('theme-btn');
+  var stored = localStorage.getItem('dash-theme');
+  if (stored) document.documentElement.setAttribute('data-theme', stored);
+  btn.addEventListener('click', function () {
+    var cur = document.documentElement.getAttribute('data-theme');
+    var dark = cur ? cur === 'dark'
+      : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var next = dark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('dash-theme', next);
+  });
+  var tt = document.getElementById('tt');
+  function showTip(slot, cx, cy) {
+    tt.textContent = '';
+    var lab = document.createElement('div');
+    lab.className = 't-label'; lab.textContent = slot.label; tt.appendChild(lab);
+    slot.items.forEach(function (it) {
+      var row = document.createElement('div'); row.className = 't-row';
+      var key = document.createElement('span'); key.className = 't-key';
+      key.style.background = it[2] || 'transparent';
+      var val = document.createElement('span'); val.className = 't-val'; val.textContent = it[1];
+      var name = document.createElement('span'); name.className = 't-name'; name.textContent = it[0];
+      row.appendChild(key); row.appendChild(val); row.appendChild(name); tt.appendChild(row);
+    });
+    tt.style.display = 'block';
+    var w = tt.offsetWidth, h = tt.offsetHeight;
+    var x = cx + 14, y = cy - h - 10;
+    if (x + w > window.innerWidth - 8) x = cx - w - 14;
+    if (y < 8) y = cy + 14;
+    tt.style.left = x + 'px'; tt.style.top = Math.max(8, y) + 'px';
+  }
+  function hideTip() { tt.style.display = 'none'; }
+  document.querySelectorAll('.chart').forEach(function (card) {
+    var svg = card.querySelector('svg');
+    var dataEl = card.querySelector('script.chart-data');
+    if (!svg || !dataEl) return;
+    var d = JSON.parse(dataEl.textContent);
+    var ch = svg.querySelector('.crosshair');
+    var bars = svg.querySelectorAll('.bar');
+    var focusIdx = -1;
+    function activate(i, clientX, clientY) {
+      i = Math.max(0, Math.min(d.slots.length - 1, i));
+      var cx = d.x0 + i * d.step;
+      if (ch) { ch.setAttribute('x1', cx); ch.setAttribute('x2', cx); ch.style.opacity = 1; }
+      bars.forEach(function (b) { b.classList.toggle('hover', +b.getAttribute('data-i') === i); });
+      var r = svg.getBoundingClientRect();
+      var px = r.left + cx * r.width / d.vbw;
+      showTip(d.slots[i], clientX != null ? clientX : px,
+              clientY != null ? clientY : r.top + r.height / 2);
+      return i;
+    }
+    function deactivate() {
+      if (ch) ch.style.opacity = 0;
+      bars.forEach(function (b) { b.classList.remove('hover'); });
+      hideTip(); focusIdx = -1;
+    }
+    svg.addEventListener('pointermove', function (e) {
+      var r = svg.getBoundingClientRect();
+      var x = (e.clientX - r.left) * d.vbw / r.width;
+      if (x < d.x0 - d.step / 2 || x > d.x0 + (d.slots.length - 0.5) * d.step) { deactivate(); return; }
+      activate(Math.round((x - d.x0) / d.step), e.clientX, e.clientY);
+    });
+    svg.addEventListener('pointerleave', deactivate);
+    svg.setAttribute('tabindex', '0'); svg.setAttribute('role', 'img');
+    svg.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight') { focusIdx = activate(focusIdx + 1); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { focusIdx = activate(focusIdx <= 0 ? 0 : focusIdx - 1); e.preventDefault(); }
+      else if (e.key === 'Escape') deactivate();
+    });
+    svg.addEventListener('blur', deactivate);
+  });
+})();
+</script>
+</body>
+</html>

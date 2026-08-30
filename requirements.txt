@@ -1,0 +1,17 @@
+# PrivatePlan dependencies.  Install into a repo-local .venv:
+#   python -m venv .venv
+#   .venv\Scripts\Activate.ps1      (Windows)
+#   source .venv/bin/activate        (macOS / Linux)
+#   pip install -r requirements.txt
+requests>=2.32
+pandas>=2.3
+numpy>=2.3
+plotly>=6.9
+Jinja2>=3.1
+lxml>=6.0
+yfinance>=0.2.60
+openpyxl>=3.1
+beautifulsoup4>=4.12
+pdfplumber>=0.11
+vaderSentiment>=3.3
+Flask>=3.1

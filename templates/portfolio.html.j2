@@ -1,0 +1,1102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portfolio — Combined Investment View</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb;
+  --ink: #0b0b0b; --ink2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --baseline: #c3c2b7; --border: rgba(11,11,11,0.10);
+  --stripe: rgba(11,11,11,0.035);
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #8b5cf6;
+  --good: #006300; --bad: #d03b3b; --warn: #b57d00;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19;
+  --ink: #ffffff; --ink2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
+    --stripe: rgba(255,255,255,0.04);
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #9d7bf0;
+  --good: #0ca30c; --bad: #d03b3b; --warn: #d99e1b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19;
+    --ink: #ffffff; --ink2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
+    --stripe: rgba(255,255,255,0.04);
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #9d7bf0;
+    --good: #0ca30c; --bad: #d03b3b; --warn: #d99e1b;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink);
+  font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 24px 20px 48px; }
+a { color: var(--s1); }
+.card { background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 18px 20px; margin-top: 16px; }
+h1 { font-size: 26px; margin: 0; font-weight: 650; }
+h2 { font-size: 16px; margin: 0 0 4px; font-weight: 600; }
+.sub { color: var(--ink2); font-size: 13px; }
+.mut { color: var(--muted); font-size: 12px; }
+.topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.chip { display: inline-block; font-size: 12px; font-weight: 600; color: var(--ink2);
+  border: 1px solid var(--border); border-radius: 999px; padding: 1px 10px;
+  vertical-align: 3px; margin-left: 8px; }
+#theme-btn, #px-btn { background: var(--surface); color: var(--ink2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 5px 12px; cursor: pointer; font-size: 13px; white-space: nowrap; }
+#px-btn { font-weight: 600; color: var(--ink); }
+#px-btn:hover:not(:disabled) { border-color: var(--s1); color: var(--s1); }
+#px-btn:disabled { opacity: .6; cursor: progress; }
+#px-state { font-size: 12px; color: var(--muted); margin-top: 2px; }
+#px-state.err { color: var(--bad); }
+.back-link { display: inline-flex; align-items: center; gap: 4px; font-size: 13px;
+  font-weight: 600; color: var(--ink2); text-decoration: none; margin-bottom: 8px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(195px, 1fr)); gap: 12px; margin-top: 16px; }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.tile .label { font-size: 13px; color: var(--ink2); }
+.tile .value { font-size: 27px; font-weight: 600; line-height: 1.2; margin: 2px 0; }
+.tile .value.good { color: var(--good); } .tile .value.bad { color: var(--bad); }
+.tile .value.warn { color: var(--warn); }
+.tile .sub { font-size: 12px; color: var(--muted); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
+.chart svg { width: 100%; height: auto; display: block; }
+.chart svg:focus { outline: 2px solid var(--s1); outline-offset: 2px; border-radius: 6px; }
+details { margin-top: 10px; }
+summary { cursor: pointer; color: var(--ink2); font-size: 13px; }
+table { border-collapse: collapse; width: 100%; margin-top: 8px; font-size: 13px; }
+th { text-align: left; color: var(--ink2); font-weight: 600; border-bottom: 1px solid var(--baseline); padding: 5px 10px 5px 0; white-space: nowrap; }
+td { border-bottom: 1px solid var(--grid); padding: 5px 10px 5px 0; font-variant-numeric: tabular-nums; }
+td.lab, th.lab { font-variant-numeric: normal; }
+.num { text-align: right; } th.num { text-align: right; }
+tr:hover td { background: var(--page); }
+.overx { overflow-x: auto; }
+
+/* Wide tables (holdings, fund sleeve) carry 14-17 columns — too many to scan as
+   one undifferentiated grid. Group them, rule the group boundaries, and pin the
+   symbol column while the rest scrolls horizontally. Scoped to .holdings so the
+   narrow tables on this page are untouched. */
+.holdings { font-size: 12.5px; }
+.holdings th, .holdings td { padding: 6px 12px 6px 0; }
+.holdings tbody tr:nth-child(even) td { background: var(--stripe); }
+.holdings tbody tr:hover td { background: var(--page); }
+.holdings .grp {
+  text-align: left; font-size: 11px; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--muted); font-weight: 600; border-bottom: none; padding-bottom: 2px;
+}
+/* group separators */
+.holdings th.gs, .holdings td.gs { border-left: 1px solid var(--grid); padding-left: 12px; }
+.holdings thead th { position: sticky; top: 0; background: var(--surface); z-index: 2; }
+.holdings thead tr:first-child th { z-index: 3; }
+/* pin ticker so a row stays identifiable while scrolling right */
+.holdings th.tick, .holdings td.tick {
+  position: sticky; left: 0; background: var(--surface); z-index: 1; padding-right: 14px;
+}
+.holdings thead th.tick { z-index: 4; }
+.holdings tbody tr:nth-child(even) td.tick {
+  background: var(--surface); box-shadow: inset 0 0 0 999px var(--stripe);
+}
+.holdings tbody tr:hover td.tick { background: var(--page); }
+/* totals live in a tfoot so the column sorter, which only reorders tbody,
+   cannot shuffle the combined row in among the accounts */
+.holdings tfoot td { border-top: 2px solid var(--grid); font-weight: 600;
+  background: var(--surface); }
+.holdings tfoot td.tick { background: var(--surface); }
+.holdings td.sect { color: var(--ink2); max-width: 88px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; }
+/* marks a cost basis that covers only part of the position */
+.holdings .partial { font-size: 10px; color: var(--warn); border: 1px solid var(--warn);
+  border-radius: 4px; padding: 0 3px; margin-left: 5px; vertical-align: 1px;
+  font-variant-numeric: normal; cursor: help; }
+.up { color: var(--good); } .down { color: var(--bad); }
+/* the plain-language answer, before any of the numbers behind it. Tinted from
+   the same --good/--bad the rest of the page uses, so it follows the theme. */
+.verdict { display: flex; gap: 16px; align-items: flex-start; margin: 14px 0 4px;
+  padding: 14px 16px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--surface); }
+.verdict-answer { font-size: 30px; font-weight: 700; line-height: 1.05;
+  letter-spacing: -0.5px; white-space: nowrap; }
+.verdict-body { font-size: 14px; line-height: 1.5; }
+.verdict.v-yes { border-color: color-mix(in srgb, var(--good) 40%, var(--border));
+  background: color-mix(in srgb, var(--good) 7%, var(--surface)); }
+.verdict.v-yes .verdict-answer { color: var(--good); }
+.verdict.v-no { border-color: color-mix(in srgb, var(--bad) 40%, var(--border));
+  background: color-mix(in srgb, var(--bad) 7%, var(--surface)); }
+.verdict.v-no .verdict-answer { color: var(--bad); }
+.verdict.v-unknown { border-color: color-mix(in srgb, var(--warn) 40%, var(--border));
+  background: color-mix(in srgb, var(--warn) 7%, var(--surface)); }
+.verdict.v-unknown .verdict-answer { color: var(--warn); font-size: 22px; }
+@media (max-width: 560px) { .verdict { flex-direction: column; gap: 6px; } }
+th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+th.sortable:hover { color: var(--ink); }
+th.sortable:focus-visible { outline: 2px solid var(--s1); outline-offset: -2px; }
+th.sortable .arrow { opacity: .35; font-size: 10px; margin-left: 3px; }
+th.sortable[aria-sort] { color: var(--ink); }
+th.sortable[aria-sort] .arrow { opacity: 1; color: var(--s1); }
+.dist { display: flex; height: 14px; border-radius: 7px; overflow: hidden; gap: 2px; margin: 12px 0 6px; }
+.dist span { display: block; min-width: 2px; }
+.dist-legend { display: flex; gap: 4px 18px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink2); }
+.dist-legend .key { display: inline-flex; align-items: center; gap: 6px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 6px 0 2px; font-size: 12.5px; color: var(--ink2); }
+.legend .key { display: inline-flex; align-items: center; gap: 6px; }
+.key .swatch { width: 12px; height: 12px; border-radius: 3px; }
+.hbar { display: grid; grid-template-columns: 190px 1fr 150px; gap: 10px; align-items: center; margin: 6px 0; font-size: 13px; }
+.hbar .track { background: var(--grid); border-radius: 4px; height: 12px; overflow: hidden; }
+/* display:block matters — the fill is a <span>, and an inline box ignores both
+   the width the template sets and this height, so every bar renders empty */
+.hbar .fill { display: block; height: 100%; background: var(--s1); border-radius: 4px; }
+.hbar .val { text-align: right; font-variant-numeric: tabular-nums; }
+#tt { position: fixed; z-index: 10; pointer-events: none; display: none;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 12px; font-size: 13px; box-shadow: 0 4px 14px rgba(0,0,0,.14); max-width: 300px; }
+#tt .t-label { color: var(--ink2); font-size: 12px; margin-bottom: 3px; }
+#tt .t-row { display: flex; align-items: center; gap: 7px; }
+#tt .t-key { width: 12px; height: 2px; border-radius: 1px; flex: none; }
+#tt .t-val { font-weight: 600; }
+#tt .t-name { color: var(--ink2); font-size: 12px; }
+.crosshair { opacity: 0; }
+.bar { transition: filter .08s; } .bar.hover { filter: brightness(1.18); }
+footer { margin-top: 22px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="topbar">
+  <div>
+    <a href="/finance" class="back-link">&larr; Finance workspace</a>
+    <h1>Investment Portfolio <span class="chip">combined view</span></h1>
+    <div class="sub">Every holding from your brokerage exports, with the SEC-backed analyzer run against each operating company · generated {{ generated_at }}</div>
+    <div class="sub" id="px-state">{{ pricing.label }}</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:flex-start">
+    <button id="px-btn" type="button" title="Fetch a current quote for every holding and revalue the portfolio">↻ Update prices</button>
+    <button id="theme-btn" type="button">◐ Theme</button>
+  </div>
+</div>
+
+<div class="tiles">
+  {% for t in tiles %}
+  <div class="tile">
+    <div class="label">{{ t.label }}</div>
+    <div class="value {{ t.cls or '' }}">{{ t.value }}</div>
+    {% if t.sub %}<div class="sub">{{ t.sub }}</div>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <h2>What the portfolio is made of</h2>
+  <div class="sub">Individual companies can be modelled from SEC filings; funds and ETFs are exposures without company fundamentals.</div>
+  <div class="dist">
+    {% for m in mix %}<span style="width:{{ m.w }}%;background:{{ m.color }}"></span>{% endfor %}
+  </div>
+  <div class="dist-legend">
+    {% for m in mix %}
+    <span class="key"><span class="swatch" style="background:{{ m.color }}"></span>{{ m.name }} {{ m.value }} ({{ m.pct }})</span>
+    {% endfor %}
+  </div>
+</div>
+
+{% macro chart_card(c) %}
+<div class="card chart" id="{{ c.id }}">
+  <h2>{{ c.title }}</h2>
+  <div class="sub">{{ c.subtitle }}</div>
+  {% if c.legend %}
+  <div class="legend">
+    {% for k in c.legend %}
+    <span class="key"><span class="{{ k.kind }}" style="background:{{ k.color }}"></span>{{ k.label }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {{ c.svg | safe }}
+  <script type="application/json" class="chart-data">{{ c.data_json | safe }}</script>
+  <details>
+    <summary>Table view</summary>
+    <div class="overx">
+    <table>
+      <tr>{% for h in c.table.head %}<th class="{{ 'num' if not loop.first else 'lab' }}">{{ h }}</th>{% endfor %}</tr>
+      {% for row in c.table.rows %}
+      <tr>{% for cell in row %}<td class="{{ 'num' if not loop.first else 'lab' }}">{{ cell }}</td>{% endfor %}</tr>
+      {% endfor %}
+    </table>
+    </div>
+  </details>
+</div>
+{% endmacro %}
+
+{{ chart_card(charts.weights) }}
+
+<div class="card">
+  <h2>Holdings — analyzer output per company</h2>
+  <div class="sub">Fundamentals from SEC EDGAR, valuation and targets from market data, and the 2-year revenue CAGR from each company's modelled 12-quarter forecast. Click a ticker for its full dashboard.</div>
+  <div class="overx">
+  <table class="holdings">
+    <thead>
+    <tr>
+      <th class="grp" colspan="2"></th>
+      <th class="grp gs" colspan="5">Your position</th>
+      <th class="grp gs" colspan="3">Market &amp; valuation</th>
+      <th class="grp gs" colspan="6">Business &amp; outlook</th>
+    </tr>
+    <tr>
+      <th class="lab tick">Ticker</th><th class="lab">Sector</th>
+      <th class="num gs">Value</th><th class="num">Weight</th>
+      <th class="num">Cost basis</th><th class="num">Gain/loss</th><th class="num">Return</th>
+      <th class="num gs">Price</th><th class="num">Mkt cap</th>
+      <th class="num">Fwd P/E</th>
+      <th class="num gs">Rev YoY</th><th class="num" title="Net margin">Net mgn</th>
+      <th class="num">2y CAGR</th><th class="num">Upside</th><th class="num">Beta</th>
+      <th class="lab">Last qtr</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for r in rows %}
+    <tr>
+      <td class="lab tick" title="{{ r.company }}">{% if r.link %}<a href="{{ r.link }}"><b>{{ r.ticker }}</b></a>{% else %}<b>{{ r.ticker }}</b>{% endif %}</td>
+      <td class="lab sect" title="{{ r.sector_full }}">{{ r.sector }}</td>
+      <td class="num gs">{{ r.value }}</td>
+      <td class="num">{{ r.weight }}</td>
+      <td class="num">{{ r.cost }}{% if r.cost_partial %}<span class="partial" title="Only {{ r.cost_partial }} of this position reports a cost basis — gain is measured on that part only">{{ r.cost_partial }}</span>{% endif %}</td>
+      <td class="num {{ r.gain_dir }}">{{ r.gain }}</td>
+      <td class="num {{ r.gain_dir }}">{{ r.gain_pct }}</td>
+      <td class="num gs">{{ r.price }}</td>
+      <td class="num">{{ r.mcap }}</td>
+      <td class="num">{{ r.fpe }}</td>
+      <td class="num gs {{ r.rev_dir }}">{{ r.rev_yoy }}</td>
+      <td class="num">{{ r.margin }}</td>
+      <td class="num">{{ r.cagr }}</td>
+      <td class="num {{ r.upside_dir }}">{{ r.upside }}</td>
+      <td class="num">{{ r.beta }}</td>
+      <td class="lab">{{ r.last_q }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% if failed %}
+  <h2 style="margin-top:16px">Held but not modellable</h2>
+  <div class="overx">
+  <table>
+    <tr><th class="lab">Ticker</th><th class="lab">Why</th><th class="num">Value</th><th class="num">% of portfolio</th></tr>
+    {% for f in failed %}
+    <tr><td class="lab">{% if f.link %}<a href="{{ f.link }}"><b>{{ f.ticker }}</b></a>{% else %}<b>{{ f.ticker }}</b>{% endif %}</td><td class="lab">{{ f.reason }}</td><td class="num">{{ f.value }}</td><td class="num">{{ f.pct }}</td></tr>
+    {% endfor %}
+  </table>
+  </div>
+  <p class="mut" style="margin:8px 0 0">A fundamentals model needs reported revenue and earnings. A pre-revenue company is a story and a balance sheet, not a set of ratios — size it on conviction, not on a P/E it does not have.</p>
+  {% endif %}
+</div>
+
+{% if trade_rows %}
+<div class="card">
+  <h2>Investment trade ledger — buys and sales</h2>
+  <div class="sub">{{ trade_summary.buy_count }} completed buy{{ "" if trade_summary.buy_count == 1 else "s" }} and
+    {{ trade_summary.sell_count }} completed sale{{ "" if trade_summary.sell_count == 1 else "s" }} from the imported investment activity.</div>
+  <div class="tiles" style="margin-top:12px">
+    <div class="tile">
+      <div class="label">Stock purchases</div><div class="value">{{ trade_summary.buy_total }}</div>
+      <div class="sub">{{ trade_summary.buy_count }} completed buys</div>
+    </div>
+    <div class="tile">
+      <div class="label">Sale proceeds</div><div class="value">{{ trade_summary.sell_total }}</div>
+      <div class="sub">{{ trade_summary.sell_count }} completed sales</div>
+    </div>
+    <div class="tile">
+      <div class="label">Covered sale cost basis</div><div class="value">{{ trade_summary.cost_basis }}</div>
+      <div class="sub">{{ trade_summary.known }} known · {{ trade_summary.unknown }} missing or partial</div>
+    </div>
+    <div class="tile">
+      <div class="label">Realized gain/loss — covered sales</div>
+      <div class="value {{ trade_summary.gain_dir }}">{{ trade_summary.realized_gain }}</div>
+      <div class="sub">{{ trade_summary.profitable }} profitable · {{ trade_summary.losses }} loss · {{ trade_summary.break_even }} break-even</div>
+    </div>
+  </div>
+  <div class="overx" style="max-height:620px;overflow:auto">
+  <table class="holdings">
+    <thead><tr>
+      <th class="lab tick">Date</th><th class="lab">Account</th><th class="lab">Side</th><th class="lab">Symbol</th>
+      <th class="num gs">Shares</th><th class="num">Price</th><th class="num">Cash amount</th>
+      <th class="num gs">Sale cost basis</th><th class="lab">Basis source</th>
+      <th class="num">Realized gain/loss</th><th class="num">Return</th><th class="lab">Result</th>
+    </tr></thead>
+    <tbody>
+    {% for r in trade_rows %}
+    <tr>
+      <td class="lab tick">{{ r.date }}</td><td class="lab">{{ r.account }}</td>
+      <td class="lab {{ r.side_cls }}"><b>{{ r.side }}</b></td><td class="lab"><b>{{ r.symbol }}</b></td>
+      <td class="num gs">{{ r.quantity }}</td><td class="num">{{ r.price }}</td><td class="num">{{ r.amount }}</td>
+      <td class="num gs">{{ r.cost_basis }}</td><td class="lab"{% if r.basis_detail %} title="{{ r.basis_detail }}"{% endif %}>{{ r.basis_source }}</td>
+      <td class="num {{ r.gain_dir }}">{{ r.gain }}</td><td class="num {{ r.gain_dir }}">{{ r.gain_pct }}</td>
+      <td class="lab {{ r.gain_dir }}">{{ r.outcome }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="mut" style="margin:8px 0 0">Cash amount is purchase cost for buys and proceeds for sales. Explicit Buy and Sell activity is shown; dividend reinvestments are excluded from this display but remain available to FIFO basis matching. Basis method: {{ trade_summary.method }}. This is an activity-ledger estimate, not a broker tax-lot or Form 1099-B calculation. Sales without enough earlier recorded purchases remain “basis unknown.”{% if trade_summary.reversals %} {{ trade_summary.reversals }} exact broker reversal pair{{ "" if trade_summary.reversals == 1 else "s" }} excluded.{% endif %}</p>
+</div>
+{% endif %}
+
+{% if fees %}
+<div class="card">
+  <h2>What the fund sleeve costs</h2>
+  <div class="sub">Weighted expense ratio <b>{{ fees.weighted }}</b> — about <b>{{ fees.annual }}</b> a year, deducted from returns whether the funds do well or badly. Covers {{ fees.coverage }} of fund value{% if fees.missing %} (no expense data for {{ fees.missing | join(", ") }}){% endif %}.</div>
+  {% if fees.cost %}
+  <div class="sub" style="margin-top:6px">Against what you paid: cost basis <b>{{ fees.cost }}</b>,
+    unrealised <b class="{{ fees.gain_dir }}">{{ fees.gain }}</b>
+    (<span class="{{ fees.gain_dir }}">{{ fees.gain_pct }}</span>){% if fees.perf_coverage %} —
+    covers {{ fees.perf_coverage }} of the sleeve, {{ fees.perf_n }} of {{ fees.perf_total }} funds
+    report a cost basis{% endif %}.</div>
+  {% endif %}
+  <div class="overx">
+  <table class="holdings">
+    <thead>
+    <tr>
+      <th class="grp" colspan="2"></th>
+      <th class="grp gs" colspan="5">Your position</th>
+      <th class="grp gs" colspan="4">What it costs to hold</th>
+      <th class="grp gs" colspan="3">Performance</th>
+    </tr>
+    <tr>
+      <th class="lab tick">Fund</th><th class="lab">Category</th>
+      <th class="num gs">Value</th><th class="num">Weight</th>
+      <th class="num">Cost basis</th><th class="num">Gain/loss</th><th class="num">Return</th>
+      <th class="num gs">Expense</th><th class="num">Category avg</th>
+      <th class="num">vs peers</th><th class="num">Fee / yr</th>
+      <th class="num gs">Yield</th><th class="num">3y return</th><th class="num">Beta</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for f in fund_rows %}
+    <tr>
+      <td class="lab tick" title="{{ f.name }}">{% if f.link %}<a href="{{ f.link }}"><b>{{ f.symbol }}</b></a>{% else %}<b>{{ f.symbol }}</b>{% endif %}</td>
+      <td class="lab sect" title="{{ f.category_full }}">{{ f.category }}</td>
+      <td class="num gs">{{ f.value }}</td>
+      <td class="num">{{ f.pct }}</td>
+      <td class="num">{{ f.cost }}</td>
+      <td class="num {{ f.gain_dir }}">{{ f.gain }}</td>
+      <td class="num {{ f.gain_dir }}">{{ f.gain_pct }}</td>
+      <td class="num gs">{{ f.er }}{% if f.er_zero %} <span class="src-badge" style="border:1px solid var(--warn);color:var(--warn)">verify</span>{% endif %}</td>
+      <td class="num">{{ f.cat_er }}</td>
+      <td class="num {{ f.vs_dir }}">{{ f.vs }}</td>
+      <td class="num">{{ f.fee }}</td>
+      <td class="num gs">{{ f.yield }}</td>
+      <td class="num">{{ f.r3 }}</td>
+      <td class="num">{{ f.beta }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="sub" style="margin:10px 0 0">At the current fee level, growing with the portfolio, that is
+    about <b>{{ fees.to_retirement }}</b> over the {{ fees.yrs_ret }} years to retirement and
+    <b>{{ fees.to_horizon }}</b> across the full {{ fees.yrs_hor }}-year plan.</p>
+  <p class="mut" style="margin:8px 0 0">A fee is certain; the outperformance meant to justify it is not.
+    Funds priced above their category average need a specific reason to stay — a cheaper index
+    equivalent usually exists. Funds below the average are doing their job.</p>
+</div>
+{% endif %}
+
+{% if advisory and advisory.configured and advisory.perf %}
+{% set pf = advisory.perf %}
+<div class="card">
+  <h2>Return on advisor-managed assets</h2>
+  {% if pf.verdict %}
+  {% set v = pf.verdict %}
+  <div class="verdict {{ 'v-yes' if v.yes else ('v-no' if v.known else 'v-unknown') }}">
+    <div class="verdict-answer">{{ "YES" if v.yes else ("NO" if v.known else "CAN'T TELL") }}</div>
+    <div class="verdict-body">
+      {% if v.known %}
+      <b>Are the advisory fees paying off?</b>
+      {% if v.yes %}
+      Yes — after everything you were charged, the advised money is
+      <b>{{ v.gap }} ahead</b> of where the same money would be in a plain
+      {{ pf.benchmark }} index fund over the same dates. That is
+      <b>{{ v.dollars }}</b> more than indexing would have left you.
+      {% else %}
+      No — after everything you were charged, the advised money is
+      <b>{{ v.gap }} behind</b> where the same money would be in a plain
+      {{ pf.benchmark }} index fund over the same dates. That is
+      <b>{{ v.dollars }}</b> less than indexing would have left you.
+      {% endif %}
+      {% if v.fee_flipped %}
+      The investments themselves beat the index; the fee took back more than
+      the win, so you still ended up behind.
+      {% endif %}
+      <div class="sub" style="margin-top:6px">
+        {% if v.conclusive %}
+        A record this long and this clear is enough to call — this is beyond
+        what luck alone comfortably explains.
+        {% else %}
+        One caveat, and it cuts both ways: {{ pf.years }} years is too short to
+        prove skill either way — a gap this size would need about
+        {{ v.years_needed }} years of record to separate from luck. What is not
+        in doubt is the fee, which was charged in full regardless.
+        {% endif %}
+      </div>
+      {% else %}
+      <b>Are the advisory fees paying off?</b>
+      Can't tell yet — {{ v.because }}. Run
+      <code>python finance/prices.py --history</code> to fetch the weekly closes
+      this comparison needs.
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+  <div class="sub">Only the {{ advisory.advised_value }} in advised accounts
+    ({{ advisory.pct_of_portfolio }} of the portfolio) — the rest of the portfolio is
+    excluded. {{ pf.start }} to {{ pf.end }}, {{ pf.years }} years, opening at
+    {{ pf.start_value }}{% if pf.n_accounts and pf.n_accounts > 1 %}, combining
+    {{ pf.n_accounts }} accounts on dollars rather than averaging their percentages{% endif %}.</div>
+
+  <div class="tiles">
+    <div class="tile">
+      <div class="label">Return after the fee</div>
+      <div class="value {{ pf.net_tone }}">{{ pf.net }}</div>
+      <div class="sub">{% if pf.net_ann %}{{ pf.net_ann }} a year{% else %}over
+        {{ pf.years }}y — too short to annualise{% endif %}</div>
+    </div>
+    <div class="tile">
+      <div class="label">Return before the fee</div>
+      <div class="value {{ pf.gross_tone }}">{{ pf.gross }}</div>
+      <div class="sub">{% if pf.gross_ann %}{{ pf.gross_ann }} a year{% else %}what the
+        money earned{% endif %}</div>
+    </div>
+    <div class="tile">
+      <div class="label">Given up to the fee</div>
+      <div class="value bad">{{ pf.fee_drag }}</div>
+      <div class="sub">{{ pf.fee }} charged{% if pf.fee_share %}, {{ pf.fee_share }} of
+        everything the money made{% endif %}</div>
+    </div>
+    {% if pf.excess_net %}
+    <div class="tile">
+      <div class="label">Against {{ pf.benchmark }}, after the fee</div>
+      <div class="value {{ 'good' if pf.ahead else 'bad' }}">{{ pf.excess_net }}</div>
+      <div class="sub">{{ pf.benchmark }} returned {{ pf.bench }} over the same dates</div>
+    </div>
+    {% endif %}
+    {% if pf.rm and pf.rm.excess_net %}
+    <div class="tile">
+      <div class="label">Against the same asset mix, after the fee</div>
+      <div class="value {{ 'good' if pf.rm.ahead else 'bad' }}">{{ pf.rm.excess_net }}</div>
+      <div class="sub">{{ pf.rm.label }} returned {{ pf.rm.bench }} over the same dates</div>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if pf.rm %}
+  <div class="sub" style="margin-top:12px"><b>Two yardsticks, two questions.</b>
+    {{ pf.benchmark }} answers "should I have just bought the index instead" — it is the
+    alternative that was actually on offer, and it is
+    {{ "100% US equity" if pf.benchmark == "VTI" else "a single broad fund" }}.
+    {% if pf.rm.excess_net %}
+    The second answers "did the advice earn its keep for the risk it took", and holds the
+    same shape as the advised money — about {{ pf.rm.equity }} equity,
+    {{ pf.rm.bonds }} bonds and credit{% if pf.rm.cash %}, {{ pf.rm.cash }} cash{% endif %} —
+    so it stops the comparison rewarding whoever simply held more stock. On that basis the
+    advised money is <b class="{{ pf.rm.dir }}">{{ pf.rm.excess_net }}</b>
+    {{ "ahead" if pf.rm.ahead else "behind" }} after the fee, {{ pf.rm.dollars }} of money.
+    {% if pf.excess_net and pf.rm.ahead != pf.ahead %}
+    <b>The two disagree</b>, and that is the finding: the gap against
+    {{ pf.benchmark }} is mostly a difference in how much market risk was carried, not in
+    how well it was managed.{% endif %}
+    {% if pf.rm.unclassified %} {{ pf.rm.unclassified }} of the sleeve has no asset-class
+    data and rides along with the classified mix.{% endif %}
+    {% elif pf.rm.missing %}
+    The risk-matched comparison needs price history for {{ pf.rm.missing }}, which is not in
+    the local series yet — run <code>python finance/prices.py --history</code> to fetch it.
+    {% endif %}</div>
+  {% endif %}
+
+  <div class="sub" style="margin-top:12px">The money made {{ pf.made }}
+    ({{ pf.gain }} of market movement{% if pf.income != "—" %}, {{ pf.income }} of
+    dividends and interest{% endif %}) and kept <b>{{ pf.kept }}</b> after
+    {{ pf.fee }} of advisory fees.</div>
+
+  {% if advisory.accounts | selectattr("perf") | list | length > 1 %}
+  <div class="overx" style="margin-top:12px">
+  <table class="holdings">
+    <thead>
+    <tr>
+      <th class="lab tick">Account</th><th class="num">Period</th>
+      <th class="num gs">Opening value</th>
+      <th class="num">Before fee</th><th class="num">After fee</th>
+      <th class="num gs">Fee</th>
+      <th class="num">vs {{ pf.benchmark }}</th>
+      <th class="num" title="Against a benchmark holding the same asset mix as the account">vs same mix</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for r in advisory.accounts if r.perf %}
+    <tr>
+      <td class="lab tick"><b>{{ r.label }}</b></td>
+      <td class="num">{{ r.perf.years }}y</td>
+      <td class="num gs">{{ r.perf.start_value }}</td>
+      <td class="num {{ r.perf.gross_dir }}">{{ r.perf.gross }}</td>
+      <td class="num {{ r.perf.net_dir }}"><b>{{ r.perf.net }}</b></td>
+      <td class="num gs">{{ r.perf.fee }}</td>
+      <td class="num {% if r.perf.excess_net %}{{ 'up' if r.perf.ahead else 'down' }}{% endif %}">{{ r.perf.excess_net or "—" }}</td>
+      <td class="num {{ r.perf.rm.dir if r.perf.rm else '' }}"
+          {% if r.perf.rm and r.perf.rm.label %}title="{{ r.perf.rm.label }}"{% endif %}>{{ (r.perf.rm and r.perf.rm.excess_net) or "—" }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    <tfoot>
+    <tr>
+      <td class="lab tick"><b>All advised</b></td>
+      <td class="num">{{ pf.years }}y</td>
+      <td class="num gs">{{ pf.start_value }}</td>
+      <td class="num {{ pf.gross_dir }}">{{ pf.gross }}</td>
+      <td class="num {{ pf.net_dir }}"><b>{{ pf.net }}</b></td>
+      <td class="num gs">{{ pf.fee }}</td>
+      <td class="num {% if pf.excess_net %}{{ 'up' if pf.ahead else 'down' }}{% endif %}">{{ pf.excess_net or "—" }}</td>
+      <td class="num {{ pf.rm.dir if pf.rm else '' }}"
+          {% if pf.rm and pf.rm.label %}title="{{ pf.rm.label }}"{% endif %}>{{ (pf.rm and pf.rm.excess_net) or "—" }}</td>
+    </tr>
+    </tfoot>
+  </table>
+  </div>
+  {% endif %}
+
+  <p class="mut" style="margin:8px 0 0">How this is measured, and what it is not. Share
+    counts are today's, valued at each end of the window from the same weekly closes as
+    the benchmark, so a position bought part-way through is treated as if it were held
+    throughout. Deposits and withdrawals are not in a positions export, so this is a
+    time-weighted approximation, not a money-weighted return — it answers "what did this
+    money do" rather than "what did I earn on what I put in".
+    {%- if not pf.aligned %} The accounts are billed on different cycles, so the combined
+    window spans the union of them.{% endif %}
+    {%- if not pf.income_complete %} Dividends and interest are only partly recorded in the
+    imported statements, so income — and therefore the return — is understated.{% endif %}
+    {%- if pf.partial %} Only {{ pf.coverage }} of the account could be priced across the
+    window; the rest is excluded from both ends.{% endif %}
+    {%- if pf.rm and pf.rm.excess_net %} The same-mix benchmark is built from the account's
+    own look-through allocation and bought at the start of the window, not rebalanced —
+    preferreds and convertibles are counted as credit, not equity, and an ex-US equity
+    sleeve is matched against ex-US.{% endif %}
+    Nothing here says the advisor caused the result — a rising market pays the fee too.</p>
+</div>
+{% endif %}
+
+{% if advisory %}
+<div class="card">
+  <h2>Advisory fees against the return they have to earn</h2>
+  {% if not advisory.configured %}
+  <div class="sub">Nothing to measure. No advisory fee was charged in any activity ledger in
+    the inbox, and no advised accounts are declared — and which accounts pay an advisor is
+    not guessed from a masked account number (<code>*1234</code>).</div>
+  <p class="mut" style="margin:8px 0 0">Two ways to switch it on. Drop a transaction/activity
+    export covering a full year into the inbox: fee rows are picked up automatically, name
+    their own account, and the rate is measured from what you were actually billed. Or, for
+    accounts whose charges never appear, copy
+    <code>finance/advisory_fees.sample.json</code> to <code>finance_data/advisory_fees.json</code>
+    and fill in the accounts and the published rate.</p>
+  {% else %}
+  <div class="sub">{{ advisory.advised_value }} of the portfolio ({{ advisory.pct_of_portfolio }})
+    sits in advised accounts paying a blended <b>{{ advisory.blended }}</b> a year —
+    <b>{{ advisory.fee_total }}</b>, charged whether the advice helps or not.</div>
+
+  <div class="overx">
+  <table class="holdings">
+    <thead>
+    <tr>
+      <th class="grp" colspan="2"></th>
+      <th class="grp gs" colspan="3">What it costs</th>
+      <th class="grp gs" colspan="3">What it must beat</th>
+      <th class="grp gs" colspan="2">Can that be proven?</th>
+    </tr>
+    <tr>
+      <th class="lab tick">Account</th><th class="num">Value</th>
+      <th class="num gs">Advisory rate</th><th class="num">Fee / yr</th>
+      <th class="num">Fund expense</th>
+      <th class="num gs">All-in cost</th><th class="num">Passive equivalent</th>
+      <th class="num">Break-even alpha</th>
+      <th class="num gs">Years of record needed</th>
+      <th class="num">Odds ahead at {{ advisory.yrs_ret }}y</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for r in advisory.accounts %}
+    <tr>
+      <td class="lab tick" title="{{ r.institution }}"><b>{{ r.label }}</b>
+        {% if r.rate_source == "charges" %}<span class="src-badge" title="Rate measured from {{ r.charges_n }} actual fee charges over {{ r.charges_years }} years, not the published schedule">billed</span>
+        {% else %}<span class="src-badge" title="No fee charges found or entered — using the published schedule">schedule</span>{% endif %}
+        {% if r.discovered %}<span class="src-badge" title="Identified as advised because an activity ledger shows an advisory fee charged to this account ({{ r.charges_from }})">from ledger</span>{% endif %}
+        {% if r.unmatched %} <span class="src-badge" style="border:1px solid var(--warn);color:var(--warn)" title="No extracted account matched this entry — the fee is measured against the declared value only">unmatched</span>{% endif %}</td>
+      <td class="num">{{ r.value }}</td>
+      <td class="num gs">{{ r.rate }}</td>
+      <td class="num">{{ r.fee }}</td>
+      <td class="num">{{ r.fund_er }}</td>
+      <td class="num gs"><b>{{ r.all_in }}</b></td>
+      <td class="num">{{ advisory.passive_er }}</td>
+      <td class="num down">{{ r.breakeven }}</td>
+      <td class="num gs">{{ r.detect }}</td>
+      <td class="num">{% for o in r.odds %}{% if o.years|string == advisory.yrs_ret %}{{ o.p }}{% endif %}{% endfor %}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    {% set t = advisory.total %}
+    <tfoot>
+    <tr>
+      <td class="lab tick"><b>All advised</b>
+        <span class="src-badge" title="{{ t.accounts_n }} advised account{{ "" if t.accounts_n == 1 else "s" }}{% if t.billed_n %}, {{ t.billed_n }} rated from actual billing{% endif %}">{{ t.accounts_n }} acct{{ "" if t.accounts_n == 1 else "s" }}</span></td>
+      <td class="num">{{ t.value }}</td>
+      <td class="num gs">{{ t.rate }}</td>
+      <td class="num">{{ t.fee }}</td>
+      <td class="num" {% if t.fund_er_coverage %}title="Expense data covers {{ t.fund_er_coverage }} of advised value"{% endif %}>{{ t.fund_er }}</td>
+      <td class="num gs">{{ t.all_in }}</td>
+      <td class="num">{{ advisory.passive_er }}</td>
+      <td class="num down">{{ t.breakeven }}</td>
+      <td class="num gs">{{ t.detect }}</td>
+      <td class="num">{% for o in t.odds %}{% if o.years|string == advisory.yrs_ret %}{{ o.p }}{% endif %}{% endfor %}</td>
+    </tr>
+    </tfoot>
+  </table>
+  </div>
+
+  <div style="margin-top:14px">
+    <h3 style="font-size:14px;margin:0 0 4px">{% if t.accounts_n > 1 %}All advised accounts
+      together{% else %}The advised total{% endif %}</h3>
+    <div class="sub">Across {{ t.accounts_n }} advised
+      account{{ "" if t.accounts_n == 1 else "s" }} holding {{ t.value }}
+      ({{ t.pct }} of the portfolio), the advice costs <b>{{ t.fee }}</b> a year at a
+      blended <b>{{ t.rate }}</b>. Adding the {{ t.fund_er }} the funds inside them charge
+      takes the all-in cost to <b>{{ t.all_in }}</b> a year — against
+      {{ advisory.passive_er }} for a passive portfolio of the same market exposure, a
+      combined hurdle of <b class="down">{{ t.breakeven }}</b> a year before any of this
+      is worth paying for.{% if t.fund_er_coverage %} Fund expense data covers
+      {{ t.fund_er_coverage }} of advised value, so the all-in figure is a floor.{% endif %}</div>
+    {% if t.charges_total and t.accounts_n > 1 %}
+    <div class="sub">Measured, not quoted: {{ t.charges_n }} advisory-fee
+      charge{{ "" if t.charges_n == 1 else "s" }} totalling <b>{{ t.charges_total }}</b>
+      across the ledgers{% if t.billed_n and t.billed_n < t.accounts_n %} — {{ t.billed_n }} of
+      {{ t.accounts_n }} accounts are rated from actual billing, the rest from a published
+      schedule{% endif %}.</div>
+    {% endif %}
+    {% if t.run_rate and t.accounts_n > 1 %}
+    <div class="sub">The most recent bills annualise to <b>{{ t.run_rate }}</b>
+      ({{ t.run_rate_rate }} of today's advised balance) — the forward cost if balances
+      hold, against the trailing year actually paid above.</div>
+    {% endif %}
+    {% if t.fee_share_of_gain and t.accounts_n > 1 %}
+    <div class="sub">One year of combined fee is <b>{{ t.fee_share_of_gain }}</b> of the
+      entire unrealised gain of {{ t.gain }} across these accounts — that gain accumulated
+      over an unknown holding period, the fee recurs annually.</div>
+    {% endif %}
+    {% if t.accounts_n > 1 %}
+    <div class="sub">On the combined hurdle, separating skill from luck at 95% confidence
+      would take about <b>{{ t.detect }} years</b> of annual returns at
+      {{ advisory.te }} tracking error. If the advice is merely average, the chance the
+      whole advised stack is ahead after
+      {% for o in t.odds %}{{ o.years }}y is {{ o.p }}{% if not loop.last %}, {% endif %}{% endfor %}.</div>
+    {% endif %}
+  </div>
+
+  {% for r in advisory.accounts %}
+  <div style="margin-top:14px">
+    <h3 style="font-size:14px;margin:0 0 4px">{{ r.label }}</h3>
+    {% if r.rate_gap %}
+    <div class="sub">Billed <b>{{ r.measured }}</b> against a <b>{{ r.declared }}</b> schedule
+      (<span class="{{ r.rate_gap_dir }}">{{ r.rate_gap }}</span>), measured over
+      {{ r.charges_n }} charges totalling {{ r.charges_total }} across
+      {{ r.charges_years }} years.</div>
+    {% elif r.rate_source == "charges" %}
+    <div class="sub">Rate measured at <b>{{ r.measured }}</b> from
+      {{ r.charges_n }} advisory-fee charge{{ "" if r.charges_n == 1 else "s" }} totalling
+      {{ r.charges_total }}{% if r.billed %}, billed {{ r.billed }}{% endif %}
+      ({{ r.charges_dates }}{% if r.charges_from %}, from {{ r.charges_from }}{% endif %}) —
+      what you were billed, not a published schedule.</div>
+    {% endif %}
+    {% if r.run_rate %}
+    <div class="sub">The most recent bill annualises to <b>{{ r.run_rate }}</b>
+      ({{ r.run_rate_rate }} of today's balance) — that is the forward cost if the
+      balance holds; the figures above are the trailing year actually paid.</div>
+    {% endif %}
+    {% if r.fee_share_of_gain %}
+    <div class="sub">One year of fee is <b>{{ r.fee_share_of_gain }}</b> of the account's
+      entire unrealised gain of {{ r.gain }} — that gain accumulated over an unknown
+      holding period, the fee recurs annually.</div>
+    {% endif %}
+    <div class="sub">To leave you level against a passive portfolio of the same market
+      exposure, this account has to out-earn it by <b>{{ r.breakeven }}</b> every year,
+      before tax. At {{ advisory.te }} tracking error, distinguishing that from luck at
+      95% confidence would take about <b>{{ r.detect }} years</b> of annual returns.
+      If the advisor is merely average, the chance of being ahead after
+      {% for o in r.odds %}{{ o.years }}y is {{ o.p }}{% if not loop.last %}, {% endif %}{% endfor %}.</div>
+    {% if r.observed %}
+    <div class="sub" style="margin-top:4px">Your supplied record: {{ r.observed.n }} periods,
+      mean excess <b>{{ r.observed.mean }}</b> a year, 95% CI {{ r.observed.ci }}
+      (t={{ r.observed.t }}, p={{ r.observed.p }}) —
+      {% if r.observed.significant %}<b>statistically distinguishable from zero</b> at this
+      sample size, which is unusual; check the periods are like-for-like against the benchmark.
+      {% else %}<b>not distinguishable from zero</b>. The interval spans both
+      comfortably-ahead and comfortably-behind, so this record neither justifies the fee
+      nor condemns it.{% endif %}</div>
+    {% else %}
+    <div class="mut" style="margin-top:4px">No period returns supplied, so there is no
+      realised track record to test — add <code>returns</code> to
+      <code>advisory_fees.json</code> to run the excess-return t-test.</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  <p class="sub" style="margin:14px 0 0">Compounded on the current balance at
+    {{ advisory.growth }} growth and no further contributions, the advisory fee alone gives up
+    about <b>{{ advisory.drag_ret }}</b> of terminal value over the {{ advisory.yrs_ret }} years
+    to retirement and <b>{{ advisory.drag_hor }}</b> across the full
+    {{ advisory.yrs_hor }}-year plan — {{ advisory.drag_hor_pct }} of what the same money
+    would otherwise have become.</p>
+  <p class="mut" style="margin:8px 0 0">The asymmetry is the finding, not the rate. The fee is
+    deducted with certainty; the outperformance meant to cover it is a random variable whose
+    sign takes decades to establish. That is an argument about what else the fee buys —
+    planning, tax work, behaviour in a drawdown, someone to call — not about returns, because
+    returns cannot settle it either way on any realistic amount of data. Judge it on the
+    services, and price those against what they would cost bought directly.</p>
+  {% if advisory.gaps %}
+  <p class="mut" style="margin:8px 0 0">Data gaps: {{ advisory.gaps | join("; ") }}.</p>
+  {% endif %}
+  {% endif %}
+</div>
+{% endif %}
+
+{% for c in fee_charts %}{{ chart_card(c) }}{% endfor %}
+
+{% if alloc_rows %}
+<div class="grid2">
+  <div class="card">
+    <h2>True asset allocation</h2>
+    <div class="sub">Funds unwrapped into what they actually hold, combined with the direct stocks and cash.</div>
+    <div class="dist">
+      {% for r in alloc_rows %}<span style="width:{{ r.w }}%;background:{{ r.color }}"></span>{% endfor %}
+    </div>
+    <div class="dist-legend">
+      {% for r in alloc_rows %}
+      <span class="key"><span class="swatch" style="background:{{ r.color }}"></span>{{ r.name }} {{ r.value }} ({{ r.pct }})</span>
+      {% endfor %}
+    </div>
+    <p class="mut" style="margin:10px 0 0">This is the allocation that matters for sequence-of-returns
+      risk, not the stock/fund split above — a bond ETF is bonds no matter which sleeve it sits in.</p>
+  </div>
+  <div class="card">
+    <h2>True sector exposure</h2>
+    <div class="sub">Direct stocks plus each fund's equity sleeve, weighted by its published sector mix.</div>
+    {% for s in true_sectors %}
+    <div class="hbar">
+      <span class="lab">{{ s.name }}</span>
+      <span class="track"><span class="fill" style="width:{{ s.w }}%"></span></span>
+      <span class="val">{{ s.value }} · {{ s.pct_eq }}</span>
+    </div>
+    {% endfor %}
+    <p class="mut" style="margin:8px 0 0">Percentages are of total equity exposure. Compare with the
+      direct-stock-only table below — funds usually push concentration higher, not lower.</p>
+  </div>
+</div>
+{% endif %}
+
+{% if look_rows %}
+<div class="card">
+  <h2>Look-through exposure — what you really own</h2>
+  <div class="sub">Shares held directly, plus the same shares held inside your funds. Fund holdings
+    cover {{ look_coverage }} of the fund sleeve (providers publish only their largest positions),
+    so the “via funds” column is a floor, not a total.</div>
+  <div class="overx">
+  <table>
+    <tr>
+      <th class="lab">Company</th><th class="lab">Name</th><th class="num">Held directly</th>
+      <th class="num">Via funds</th><th class="num">Total exposure</th>
+      <th class="num">% of portfolio</th><th class="lab">Inside</th>
+    </tr>
+    {% for r in look_rows %}
+    <tr>
+      <td class="lab"><b>{{ r.symbol }}</b>{% if r.both %} <span class="src-badge">both</span>{% endif %}</td>
+      <td class="lab">{{ r.name }}</td>
+      <td class="num">{{ r.direct }}</td>
+      <td class="num">{{ r.via }}</td>
+      <td class="num">{{ r.total }}</td>
+      <td class="num">{{ r.pct }}</td>
+      <td class="lab">{{ r.sources }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+  <p class="mut" style="margin:8px 0 0">Rows marked <span class="src-badge">both</span> are owned twice over —
+    once by choice and once inside an index. That is not automatically wrong, but it means the real
+    position is larger than the direct holding suggests.</p>
+</div>
+{% endif %}
+
+<div class="grid2">
+  <div class="card">
+    <h2>Sector exposure — direct stocks only</h2>
+    <div class="sub">Compare with the look-through sector table above.</div>
+    {% for s in sector_rows %}
+    <div class="hbar">
+      <span class="lab">{{ s.name }}</span>
+      <span class="track"><span class="fill" style="width:{{ s.w }}%"></span></span>
+      <span class="val">{{ s.value }} · {{ s.pct_stocks }}</span>
+    </div>
+    {% endfor %}
+    <p class="mut" style="margin:8px 0 0">Percentages are of the stock sleeve. Funds add further exposure that is not attributed here.</p>
+  </div>
+  <div class="card">
+    <h2>Portfolio characteristics</h2>
+    <table>
+      <tr><td class="lab">Weighted trailing P/E</td><td class="num">{{ tpe }}</td></tr>
+      <tr><td class="lab">Weighted beta</td><td class="num">{{ beta }}</td></tr>
+      <tr><td class="lab">Weighted dividend yield</td><td class="num">{{ dy }}</td></tr>
+      <tr><td class="lab">Stocks / funds / cash</td><td class="num">{{ p.stocks | length }} / {{ p.funds | length }} / {{ p.cash | length }}</td></tr>
+    </table>
+    <p class="mut" style="margin:10px 0 0">Weighted figures cover only the names that report each metric, so a company with no forward estimate is excluded from that average rather than treated as zero. Beta above 1 means the stock sleeve is more volatile than the market — relevant six years from retirement.</p>
+  </div>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h2>Funds &amp; ETFs</h2>
+    <div class="sub">No company fundamentals to model — analysed on cost and contents instead.</div>
+    <div class="overx">
+    <table>
+      <tr><th class="lab">Symbol</th><th class="lab">What it is</th><th class="num">Value</th><th class="num">% of portfolio</th></tr>
+      {% for f in funds %}
+      <tr><td class="lab"><b>{{ f.symbol }}</b></td><td class="lab">{{ f.note }}</td><td class="num">{{ f.value }}</td><td class="num">{{ f.pct }}</td></tr>
+      {% endfor %}
+    </table>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Cash &amp; other</h2>
+    <div class="overx">
+    <table>
+      <tr><th class="lab">Symbol</th><th class="num">Value</th><th class="num">% of portfolio</th></tr>
+      {% for c in cash %}
+      <tr><td class="lab">{{ c.symbol }}</td><td class="num">{{ c.value }}</td><td class="num">{{ c.pct }}</td></tr>
+      {% endfor %}
+      {% for o in other %}
+      <tr><td class="lab">{{ o.symbol }}</td><td class="num">{{ o.value }}</td><td class="num">{{ o.pct }}</td></tr>
+      {% endfor %}
+    </table>
+    </div>
+    <p class="mut" style="margin:8px 0 0">Cash is dry powder and a sequence-of-returns buffer, but it also drags long-run returns — worth sizing deliberately rather than by accumulation.</p>
+  </div>
+</div>
+
+<footer class="mut">Portfolio view · built from your brokerage exports and the SEC-backed analyzer ·
+fundamentals from EDGAR XBRL, valuation and targets from market data. Forecast quarters beyond
+analyst coverage are model extrapolations, not guidance. Not investment advice.</footer>
+</div>
+
+<div id="tt" role="status"></div>
+
+<script>
+(function () {
+  var btn = document.getElementById('theme-btn');
+  var stored = localStorage.getItem('dash-theme');
+  if (stored) document.documentElement.setAttribute('data-theme', stored);
+  btn.addEventListener('click', function () {
+    var cur = document.documentElement.getAttribute('data-theme');
+    var dark = cur ? cur === 'dark'
+      : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var next = dark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('dash-theme', next);
+  });
+
+  var tt = document.getElementById('tt');
+  function showTip(slot, cx, cy) {
+    tt.textContent = '';
+    var lab = document.createElement('div');
+    lab.className = 't-label'; lab.textContent = slot.label;
+    tt.appendChild(lab);
+    slot.items.forEach(function (it) {
+      var row = document.createElement('div'); row.className = 't-row';
+      var key = document.createElement('span'); key.className = 't-key';
+      key.style.background = it[2] || 'transparent';
+      var val = document.createElement('span'); val.className = 't-val'; val.textContent = it[1];
+      var name = document.createElement('span'); name.className = 't-name'; name.textContent = it[0];
+      row.appendChild(key); row.appendChild(val); row.appendChild(name);
+      tt.appendChild(row);
+    });
+    tt.style.display = 'block';
+    var w = tt.offsetWidth, h = tt.offsetHeight;
+    var x = cx + 14, y = cy - h - 10;
+    if (x + w > window.innerWidth - 8) x = cx - w - 14;
+    if (y < 8) y = cy + 14;
+    tt.style.left = x + 'px'; tt.style.top = Math.max(8, y) + 'px';
+  }
+  function hideTip() { tt.style.display = 'none'; }
+
+  document.querySelectorAll('.chart').forEach(function (card) {
+    var svg = card.querySelector('svg');
+    var dataEl = card.querySelector('script.chart-data');
+    if (!svg || !dataEl) return;
+    var d = JSON.parse(dataEl.textContent);
+    var ch = svg.querySelector('.crosshair');
+    var bars = svg.querySelectorAll('.bar');
+    var focusIdx = -1;
+    function activate(i, clientX, clientY) {
+      i = Math.max(0, Math.min(d.slots.length - 1, i));
+      var cx = d.x0 + i * d.step;
+      if (ch) { ch.setAttribute('x1', cx); ch.setAttribute('x2', cx); ch.style.opacity = 1; }
+      bars.forEach(function (b) { b.classList.toggle('hover', +b.getAttribute('data-i') === i); });
+      var r = svg.getBoundingClientRect();
+      var px = r.left + cx * r.width / d.vbw;
+      showTip(d.slots[i], clientX != null ? clientX : px,
+              clientY != null ? clientY : r.top + r.height / 2);
+      return i;
+    }
+    function deactivate() {
+      if (ch) ch.style.opacity = 0;
+      bars.forEach(function (b) { b.classList.remove('hover'); });
+      hideTip(); focusIdx = -1;
+    }
+    svg.addEventListener('pointermove', function (e) {
+      var r = svg.getBoundingClientRect();
+      var x = (e.clientX - r.left) * d.vbw / r.width;
+      if (x < d.x0 - d.step / 2 || x > d.x0 + (d.slots.length - 0.5) * d.step) { deactivate(); return; }
+      activate(Math.round((x - d.x0) / d.step), e.clientX, e.clientY);
+    });
+    svg.addEventListener('pointerleave', deactivate);
+    svg.setAttribute('tabindex', '0'); svg.setAttribute('role', 'img');
+    svg.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight') { focusIdx = activate(focusIdx + 1); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { focusIdx = activate(focusIdx <= 0 ? 0 : focusIdx - 1); e.preventDefault(); }
+      else if (e.key === 'Escape') deactivate();
+    });
+    svg.addEventListener('blur', deactivate);
+  });
+})();
+
+/* Sortable columns on the wide tables. The cells hold formatted text ($1.2M,
+   12.3%, —), so sorting parses them back to numbers rather than requiring the
+   renderer to emit a parallel set of sort keys: one place to change, and it
+   keeps working for any column added later. A column of mostly-unparseable
+   cells (ticker, sector) sorts as text instead, and blanks always sink to the
+   bottom whichever direction is chosen — an unknown is not a small number. */
+(function () {
+  var SUFFIX = { K: 1e3, M: 1e6, B: 1e9, T: 1e12 };
+
+  function num(text) {
+    var t = (text || '').trim();
+    if (!t || t === '—' || t === '-' || t === 'n/a') return null;
+    var neg = /^\(.*\)$/.test(t) || /^-/.test(t.replace(/[$\s]/g, ''));
+    var m = t.replace(/[,$%()\s]/g, '').match(/-?([\d.]+)([KMBT])?/);
+    if (!m || m[1] === '' || isNaN(parseFloat(m[1]))) return null;
+    var v = parseFloat(m[1]) * (SUFFIX[m[2]] || 1);
+    return neg ? -v : v;
+  }
+
+  function cellText(row, i) {
+    var c = row.cells[i];
+    return c ? c.textContent : '';
+  }
+
+  document.querySelectorAll('table.holdings').forEach(function (table) {
+    var head = table.tHead && table.tHead.rows[table.tHead.rows.length - 1];
+    var body = table.tBodies[0];
+    if (!head || !body || body.rows.length < 2) return;
+    var headers = Array.prototype.slice.call(head.cells);
+
+    headers.forEach(function (th, idx) {
+      th.classList.add('sortable');
+      th.tabIndex = 0;
+      th.setAttribute('role', 'button');
+      var arrow = document.createElement('span');
+      arrow.className = 'arrow';
+      arrow.textContent = '↕';
+      th.appendChild(arrow);
+
+      function sort() {
+        var rows = Array.prototype.slice.call(body.rows);
+        var vals = rows.map(function (r) { return num(cellText(r, idx)); });
+        var numeric = vals.filter(function (v) { return v !== null; }).length
+                      >= Math.ceil(rows.length / 2);
+        // A number column opens biggest-first (the interesting end of a
+        // position list); a name column opens A→Z. Either way a second click
+        // reverses, and the arrow always shows the order actually applied.
+        var sorted = th.getAttribute('aria-sort');
+        var desc = numeric ? sorted !== 'descending' : sorted === 'ascending';
+        var dir = desc ? -1 : 1;
+        rows.sort(function (a, b) {
+          var av = numeric ? num(cellText(a, idx)) : cellText(a, idx).trim();
+          var bv = numeric ? num(cellText(b, idx)) : cellText(b, idx).trim();
+          var aEmpty = av === null || av === '' || av === '—';
+          var bEmpty = bv === null || bv === '' || bv === '—';
+          if (aEmpty || bEmpty) return aEmpty && bEmpty ? 0 : (aEmpty ? 1 : -1);
+          if (numeric) return (av - bv) * dir;
+          return av.localeCompare(bv, undefined, { numeric: true }) * dir;
+        });
+        headers.forEach(function (h) {
+          h.removeAttribute('aria-sort');
+          h.querySelector('.arrow').textContent = '↕';
+        });
+        th.setAttribute('aria-sort', desc ? 'descending' : 'ascending');
+        th.querySelector('.arrow').textContent = desc ? '▼' : '▲';
+        rows.forEach(function (r) { body.appendChild(r); });
+      }
+
+      th.addEventListener('click', sort);
+      th.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sort(); }
+      });
+    });
+  });
+})();
+
+/* Update prices: kick off the quote refresh, poll the job, reload when it is
+   done. This page is a static file, so everything goes through the finance
+   app's existing run/job endpoints on the same origin. */
+(function () {
+  var btn = document.getElementById('px-btn');
+  var state = document.getElementById('px-state');
+  if (!btn) return;
+  var original = state ? state.textContent : '';
+
+  function say(msg, isErr) {
+    if (!state) return;
+    state.textContent = msg;
+    state.classList.toggle('err', !!isErr);
+  }
+  function fail(msg) {
+    say(msg + ' — prices unchanged.', true);
+    btn.disabled = false;
+    btn.textContent = '↻ Update prices';
+  }
+
+  btn.addEventListener('click', function () {
+    btn.disabled = true;
+    btn.textContent = 'Updating…';
+    say('Fetching quotes…');
+    fetch('/finance/run/prices', { method: 'POST' })
+      .then(function (r) {
+        if (r.status === 409) throw new Error('Another finance job is running');
+        if (!r.ok) throw new Error('Could not start (HTTP ' + r.status + ')');
+        return r.json();
+      })
+      .then(function (j) {
+        var tries = 0;
+        (function poll() {
+          if (++tries > 150) return fail('Timed out after 5 minutes');
+          fetch('/finance/job/' + j.job_id)
+            .then(function (r) { return r.json(); })
+            .then(function (s) {
+              if (s.status === 'running') { say('Fetching quotes… (' + tries * 2 + 's)'); return setTimeout(poll, 2000); }
+              if (s.status === 'done') { say('Updated — reloading…'); location.reload(); }
+              else fail('Refresh failed (exit ' + s.returncode + ')');
+            })
+            .catch(function () { setTimeout(poll, 2000); });
+        })();
+      })
+      .catch(function (e) { fail(e.message); });
+  });
+})();
+</script>
+</body>
+</html>

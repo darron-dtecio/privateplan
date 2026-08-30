@@ -1,0 +1,83 @@
+{
+  "tax_year": 2026,
+  "_source": "Rev. Proc. 2025-32 and SSA/CMS releases, ESTIMATED as of mid-2026.",
+  "_warning": "Every figure here is an estimate. Confirm against current IRS, SSA and CMS publications before relying on exact dollar outcomes. A bracket in the wrong place changes a retirement plan by years.",
+  "_format": "brackets and ltcg are [upper_bound, rate] pairs, ascending, with null meaning unbounded. irmaa_tiers are [magi_upper, label]; irmaa_surcharge_annual are [magi_upper, annual_dollars_per_enrollee].",
+
+  "filing_status": {
+    "mfj": {
+      "label": "Married filing jointly",
+      "people": 2,
+      "brackets": [[24800, 0.10], [100800, 0.12], [211100, 0.22], [403550, 0.24],
+                   [512450, 0.32], [768700, 0.35], [null, 0.37]],
+      "standard_deduction": 32200,
+      "std_deduction_65_extra": 1650,
+      "senior_deduction_phaseout_start": 150000,
+      "addl_medicare_threshold": 250000,
+      "ss_tax_base": 32000,
+      "ss_tax_upper": 44000,
+      "ltcg": [[98900, 0.0], [613700, 0.15], [null, 0.20]],
+      "niit_threshold": 250000,
+      "irmaa_tiers": [[218000, "standard"], [272000, "tier 1"], [340000, "tier 2"],
+                      [408000, "tier 3"], [750000, "tier 4"], [null, "tier 5"]],
+      "irmaa_surcharge_annual": [[218000, 0], [274000, 1148.40], [342000, 2884.80],
+                                 [410000, 4620.00], [750000, 6355.20], [null, 6936.00]]
+    },
+
+    "single": {
+      "label": "Single",
+      "people": 1,
+      "brackets": [[12400, 0.10], [50400, 0.12], [105550, 0.22], [201775, 0.24],
+                   [256225, 0.32], [640600, 0.35], [null, 0.37]],
+      "standard_deduction": 16100,
+      "std_deduction_65_extra": 2050,
+      "senior_deduction_phaseout_start": 75000,
+      "addl_medicare_threshold": 200000,
+      "ss_tax_base": 25000,
+      "ss_tax_upper": 34000,
+      "ltcg": [[49450, 0.0], [545500, 0.15], [null, 0.20]],
+      "niit_threshold": 200000,
+      "irmaa_tiers": [[109000, "standard"], [136000, "tier 1"], [170000, "tier 2"],
+                      [204000, "tier 3"], [375000, "tier 4"], [null, "tier 5"]],
+      "irmaa_surcharge_annual": [[109000, 0], [137000, 1148.40], [171000, 2884.80],
+                                 [205000, 4620.00], [375000, 6355.20], [null, 6936.00]]
+    },
+
+    "hoh": {
+      "label": "Head of household",
+      "people": 1,
+      "brackets": [[17700, 0.10], [67450, 0.12], [105700, 0.22], [201775, 0.24],
+                   [256200, 0.32], [640600, 0.35], [null, 0.37]],
+      "standard_deduction": 24150,
+      "std_deduction_65_extra": 2050,
+      "senior_deduction_phaseout_start": 112500,
+      "addl_medicare_threshold": 200000,
+      "ss_tax_base": 25000,
+      "ss_tax_upper": 34000,
+      "ltcg": [[66200, 0.0], [579600, 0.15], [null, 0.20]],
+      "niit_threshold": 200000,
+      "irmaa_tiers": [[109000, "standard"], [136000, "tier 1"], [170000, "tier 2"],
+                      [204000, "tier 3"], [375000, "tier 4"], [null, "tier 5"]],
+      "irmaa_surcharge_annual": [[109000, 0], [137000, 1148.40], [171000, 2884.80],
+                                 [205000, 4620.00], [375000, 6355.20], [null, 6936.00]]
+    },
+
+    "mfs": {
+      "label": "Married filing separately",
+      "people": 1,
+      "_note": "Social Security is taxable from the first dollar of provisional income for a married person filing separately who lived with their spouse, hence the zero bases. IRMAA for MFS uses its own compressed two-tier schedule; the tiers below approximate it.",
+      "brackets": [[12400, 0.10], [50400, 0.12], [105550, 0.22], [201775, 0.24],
+                   [256225, 0.32], [384350, 0.35], [null, 0.37]],
+      "standard_deduction": 16100,
+      "std_deduction_65_extra": 1650,
+      "senior_deduction_phaseout_start": 75000,
+      "addl_medicare_threshold": 125000,
+      "ss_tax_base": 0,
+      "ss_tax_upper": 0,
+      "ltcg": [[49450, 0.0], [306850, 0.15], [null, 0.20]],
+      "niit_threshold": 125000,
+      "irmaa_tiers": [[109000, "standard"], [137000, "tier 4"], [null, "tier 5"]],
+      "irmaa_surcharge_annual": [[109000, 0], [137000, 6355.20], [null, 6936.00]]
+    }
+  }
+}

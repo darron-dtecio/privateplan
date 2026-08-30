@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ ticker }} — 12-Quarter Outlook</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb;
+  --ink: #0b0b0b; --ink2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --baseline: #c3c2b7; --border: rgba(11,11,11,0.10);
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #8b5cf6;
+  --good: #006300; --bad: #d03b3b;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19;
+  --ink: #ffffff; --ink2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #9d7bf0;
+  --good: #0ca30c; --bad: #d03b3b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19;
+    --ink: #ffffff; --ink2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #9d7bf0;
+    --good: #0ca30c; --bad: #d03b3b;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--page); color: var(--ink);
+  font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.wrap { max-width: 1080px; margin: 0 auto; padding: 24px 20px 48px; }
+a { color: var(--s1); }
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 18px 20px; margin-top: 16px;
+}
+h1 { font-size: 26px; margin: 0; font-weight: 650; }
+h2 { font-size: 16px; margin: 0 0 4px; font-weight: 600; }
+h3 { font-size: 14px; margin: 0 0 6px; font-weight: 600; }
+.sub { color: var(--ink2); font-size: 13px; }
+.mut { color: var(--muted); font-size: 12px; }
+.topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.chip {
+  display: inline-block; font-size: 12px; font-weight: 600; color: var(--ink2);
+  border: 1px solid var(--border); border-radius: 999px; padding: 1px 10px;
+  vertical-align: 3px; margin-left: 8px;
+}
+#theme-btn {
+  background: var(--surface); color: var(--ink2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 5px 12px; cursor: pointer; font-size: 13px;
+}
+.back-link {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 13px;
+  font-weight: 600; color: var(--ink2); text-decoration: none; margin-bottom: 8px;
+}
+.back-link:hover { color: var(--s1); }
+.statrow { display: flex; flex-wrap: wrap; gap: 6px 26px; margin-top: 12px; }
+.stat .mut { display: block; }
+.stat b { font-weight: 600; font-size: 14px; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 16px; }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.tile .label { font-size: 13px; color: var(--ink2); }
+.tile .value { font-size: 30px; font-weight: 600; line-height: 1.2; margin: 2px 0; }
+.tile .value.good { color: var(--good); } .tile .value.bad { color: var(--bad); }
+.delta { font-size: 13px; font-weight: 600; }
+.delta.up { color: var(--good); } .delta.down { color: var(--bad); }
+.delta .vs { color: var(--muted); font-weight: 400; }
+.beat { font-size: 12px; font-weight: 600; border-radius: 999px; padding: 0 8px; margin-left: 6px; }
+.beat.up { color: var(--good); border: 1px solid var(--good); }
+.beat.down { color: var(--bad); border: 1px solid var(--bad); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 800px) { .grid2 { grid-template-columns: 1fr; } }
+.chart svg { width: 100%; height: auto; display: block; }
+.chart svg:focus { outline: 2px solid var(--s1); outline-offset: 2px; border-radius: 6px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 6px 0 2px; font-size: 12.5px; color: var(--ink2); }
+.legend .key { display: inline-flex; align-items: center; gap: 6px; }
+.key .swatch { width: 12px; height: 12px; border-radius: 3px; }
+.key .line { width: 16px; height: 2px; border-radius: 1px; }
+.key .band { width: 14px; height: 10px; border-radius: 2px; opacity: .35; }
+details { margin-top: 10px; }
+summary { cursor: pointer; color: var(--ink2); font-size: 13px; }
+table { border-collapse: collapse; width: 100%; margin-top: 8px; font-size: 13px; }
+th { text-align: left; color: var(--ink2); font-weight: 600; border-bottom: 1px solid var(--baseline); padding: 5px 10px 5px 0; }
+td { border-bottom: 1px solid var(--grid); padding: 5px 10px 5px 0; font-variant-numeric: tabular-nums; }
+td.lab, th.lab { font-variant-numeric: normal; }
+.num { text-align: right; }
+th.num { text-align: right; }
+.src-badge { font-size: 11px; font-weight: 600; color: var(--ink2); border: 1px solid var(--border); border-radius: 999px; padding: 0 8px; white-space: nowrap; }
+.overx { overflow-x: auto; }
+ul { margin: 6px 0; padding-left: 20px; }
+li { margin: 3px 0; }
+.cols { columns: 2; column-gap: 28px; }
+@media (max-width: 800px) { .cols { columns: 1; } }
+#tt {
+  position: fixed; z-index: 10; pointer-events: none; display: none;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 12px; font-size: 13px; box-shadow: 0 4px 14px rgba(0,0,0,.14);
+  max-width: 260px;
+}
+#tt .t-label { color: var(--ink2); font-size: 12px; margin-bottom: 3px; }
+#tt .t-row { display: flex; align-items: center; gap: 7px; }
+#tt .t-key { width: 12px; height: 2px; border-radius: 1px; flex: none; }
+#tt .t-val { font-weight: 600; }
+#tt .t-name { color: var(--ink2); font-size: 12px; }
+.crosshair { opacity: 0; }
+.bar { transition: filter .08s; }
+.bar.hover { filter: brightness(1.18); }
+.dist { display: flex; height: 12px; border-radius: 6px; overflow: hidden; gap: 2px; margin: 10px 0 4px; }
+.dist span { display: block; min-width: 2px; }
+.dist-legend { display: flex; gap: 4px 18px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink2); }
+.dist-legend .key { display: inline-flex; align-items: center; gap: 6px; }
+.posts { list-style: none; padding: 0; margin: 10px 0 0; }
+.posts li { margin: 7px 0; border-bottom: 1px solid var(--grid); padding-bottom: 7px; }
+.posts li:last-child { border-bottom: none; }
+.posts .meta { display: block; font-size: 12px; color: var(--muted); }
+footer { margin-top: 22px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="topbar">
+  <div>
+    <a href="/stocks" class="back-link">&larr; All stocks</a>
+    <h1>{{ company }} <span class="chip">{{ ticker }}</span></h1>
+    <div class="sub">{{ sector }}{% if industry %} · {{ industry }}{% endif %} · Last reported: {{ last_quarter.fiscal_label }} (quarter ended {{ last_quarter.end_date }})</div>
+  </div>
+  <button id="theme-btn" type="button">◐ Theme</button>
+</div>
+
+<div class="statrow card" style="margin-top:14px">
+  {% for s in header_stats %}
+  <span class="stat"><span class="mut">{{ s.label }}</span><b>{{ s.value }}</b></span>
+  {% endfor %}
+</div>
+
+{% if narrative %}
+<div class="card">
+  <h2>{{ narrative.headline }}</h2>
+  <p style="margin:6px 0 0">{{ narrative.executive_summary }}</p>
+</div>
+{% endif %}
+
+<div class="tiles">
+  {% for t in tiles %}
+  <div class="tile">
+    <div class="label">{{ t.label }}</div>
+    <div class="value">{{ t.value }}{% if t.beat %}<span class="beat {{ t.beat_dir }}">{{ t.beat }}</span>{% endif %}</div>
+    {% if t.delta %}<div class="delta {{ t.delta_dir }}">{{ t.delta }} <span class="vs">vs {{ t.vs }}</span></div>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+{% macro chart_card(c) %}
+<div class="card chart" id="{{ c.id }}">
+  <h2>{{ c.title }}</h2>
+  <div class="sub">{{ c.subtitle }}</div>
+  {% if c.legend %}
+  <div class="legend">
+    {% for k in c.legend %}
+    <span class="key"><span class="{{ k.kind }}" style="background:{{ k.color }}"></span>{{ k.label }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {{ c.svg | safe }}
+  <script type="application/json" class="chart-data">{{ c.data_json | safe }}</script>
+  <details>
+    <summary>Table view</summary>
+    <div class="overx">
+    <table>
+      <tr>{% for h in c.table.head %}<th class="{{ 'num' if not loop.first else 'lab' }}">{{ h }}</th>{% endfor %}</tr>
+      {% for row in c.table.rows %}
+      <tr>{% for cell in row %}<td class="{{ 'num' if not loop.first else 'lab' }}">{{ cell }}</td>{% endfor %}</tr>
+      {% endfor %}
+    </table>
+    </div>
+  </details>
+</div>
+{% endmacro %}
+
+{% if charts.revenue %}{{ chart_card(charts.revenue) }}{% endif %}
+{% if charts.eps %}{{ chart_card(charts.eps) }}{% else %}
+<div class="card"><h2>Quarterly diluted EPS</h2><p class="sub">No usable per-share history in this filer's XBRL data, so the EPS chart is omitted. Revenue and margins above are unaffected.</p></div>
+{% endif %}
+
+<div class="grid2">
+  {{ chart_card(charts.margins) }}
+  {% if charts.segments %}{{ chart_card(charts.segments) }}{% else %}
+  <div class="card"><h2>Segment detail</h2><p class="sub">No segment data found — supply an IR workbook (<code>--ir-xlsx &lt;url&gt;</code>) or a <code>segments.json</code> (written by /analyze from filings and press releases).</p></div>
+  {% endif %}
+</div>
+
+{% if charts.cash %}{{ chart_card(charts.cash) }}{% endif %}
+
+{% if balance or charts.cashdebt %}
+<div class="grid2">
+  {% if balance %}
+  <div class="card">
+    <h2>Balance sheet snapshot</h2>
+    <div class="sub">As of {{ balance_asof }} quarter end, with year-over-year change.</div>
+    <table>
+      {% for b in balance %}
+      <tr>
+        <td class="lab">{{ b.label }}</td>
+        <td class="num">{{ b.value }}</td>
+        <td class="num">{% if b.delta %}<span class="delta {{ b.delta_dir }}">{{ b.delta }}</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif %}
+  {% if charts.cashdebt %}{{ chart_card(charts.cashdebt) }}{% endif %}
+</div>
+{% endif %}
+
+{% if charts.capret %}{{ chart_card(charts.capret) }}{% endif %}
+
+{{ chart_card(charts.price) }}
+
+{% if sentiment %}
+<div class="grid2">
+  <div class="card">
+    <h2>Social sentiment — Reddit &amp; StockTwits</h2>
+    <div class="sub">
+      {{ sentiment.summary.post_count }} posts, past {{ sentiment.window_days or 30 }} days —
+      <b>{{ sentiment.summary.label }}</b> (avg score {{ "%+.2f"|format(sentiment.summary.avg_compound) }})
+    </div>
+    <div class="dist">
+      {% for name, w, color in sentiment.dist %}<span style="width:{{ w }}%;background:{{ color }}"></span>{% endfor %}
+    </div>
+    <div class="dist-legend">
+      {% for name, w, color in sentiment.dist %}
+      <span class="key"><span class="swatch" style="background:{{ color }}"></span>{{ name }} {{ w }}%</span>
+      {% endfor %}
+    </div>
+    {% if narrative and narrative.social_sentiment %}
+    <p style="margin:10px 0 0">{{ narrative.social_sentiment }}</p>
+    {% endif %}
+    {% if sentiment.top_posts %}
+    <h3 style="margin-top:12px">Most-engaged posts</h3>
+    <ul class="posts">
+      {% for p in sentiment.top_posts %}
+      <li><a href="{{ p.url }}">{{ p.title }}</a>
+        <span class="meta">{{ p.source }} · {{ p.score }} engagement · {{ p.label }} ({{ "%+.2f"|format(p.compound) }})</span></li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% for n in sentiment.notes %}<p class="mut" style="margin:8px 0 0">{{ n }}</p>{% endfor %}
+    <p class="mut" style="margin:8px 0 0">Fetched {{ sentiment.fetched_at }}. Social chatter is noisy and unverified — directional color, not investment signal.</p>
+  </div>
+  {% if charts.senti_trend %}{{ chart_card(charts.senti_trend) }}{% endif %}
+</div>
+{% endif %}
+
+{% if narrative %}
+<div class="card">
+  <h2>The quarter in review</h2>
+  <p style="margin:6px 0 0">{{ narrative.quarter_recap }}</p>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h2>Bull case</h2>
+    <ul>{% for b in narrative.thesis.bull %}<li>{{ b }}</li>{% endfor %}</ul>
+  </div>
+  <div class="card">
+    <h2>Bear case</h2>
+    <ul>{% for b in narrative.thesis.bear %}<li>{{ b }}</li>{% endfor %}</ul>
+  </div>
+</div>
+
+{% if narrative.segment_story %}
+<div class="card">
+  <h2>Segment stories</h2>
+  {% for s in narrative.segment_story %}
+  <h3 style="margin-top:10px">{{ s.name }}</h3>
+  <p style="margin:2px 0 0">{{ s.story }}</p>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+  <h2>Why this 12-quarter path is credible</h2>
+  <p style="margin:6px 0 0">{{ narrative.forecast_rationale }}</p>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h2>Risks</h2>
+    <ul>{% for r in narrative.risks %}<li>{{ r }}</li>{% endfor %}</ul>
+  </div>
+  <div class="card">
+    <h2>Catalysts</h2>
+    <ul>{% for c in narrative.catalysts %}<li>{{ c }}</li>{% endfor %}</ul>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2>12-quarter forecast detail</h2>
+  <div class="sub">Base / bear–bull range per quarter. Source shows where consensus ends and modeling begins.</div>
+  <div class="overx">
+  <table>
+    <tr><th class="lab">Quarter</th><th class="lab">Calendar</th><th class="num">{{ forecast_col_label }} (base)</th><th class="num">{{ forecast_col_label }} range</th><th class="num">EPS (base)</th><th class="num">EPS range</th><th class="lab">Source</th></tr>
+    {% for q in forecast_rows %}
+    <tr>
+      <td class="lab">{{ q.fiscal }}</td><td class="lab">{{ q.calendar }}</td>
+      <td class="num">{{ q.rev }}</td><td class="num">{{ q.rev_range }}</td>
+      <td class="num">{{ q.eps }}</td><td class="num">{{ q.eps_range }}</td>
+      <td class="lab"><span class="src-badge">{{ q.source }}</span></td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h2>Model assumptions</h2>
+    <table>
+      {% for a in assumptions %}
+      <tr><td class="lab">{{ a.label }}</td><td class="num">{{ a.value }}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+  <div class="card">
+    <h2>Sources</h2>
+    <ul>
+      {% for s in sources %}<li><a href="{{ s.url }}">{{ s.label }}</a></li>{% endfor %}
+    </ul>
+    <p class="mut">Generated {{ generated_at }}. Data: SEC EDGAR XBRL, Yahoo Finance consensus{% if has_ir %}, company IR workbook{% endif %}{% if sentiment %}, Reddit &amp; StockTwits{% endif %}. Quarters beyond analyst coverage are model extrapolations, not guidance. Not investment advice.</p>
+  </div>
+</div>
+
+<footer class="mut">{{ ticker }} 12-quarter outlook · built with the Stock Analysis pipeline</footer>
+</div>
+
+<div id="tt" role="status"></div>
+
+<script>
+(function () {
+  var btn = document.getElementById('theme-btn');
+  var stored = localStorage.getItem('dash-theme');
+  if (stored) document.documentElement.setAttribute('data-theme', stored);
+  btn.addEventListener('click', function () {
+    var cur = document.documentElement.getAttribute('data-theme');
+    var dark = cur ? cur === 'dark'
+      : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var next = dark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('dash-theme', next);
+  });
+
+  var tt = document.getElementById('tt');
+
+  function showTip(slot, cx, cy) {
+    tt.textContent = '';
+    var lab = document.createElement('div');
+    lab.className = 't-label';
+    lab.textContent = slot.label;
+    tt.appendChild(lab);
+    slot.items.forEach(function (it) {
+      var row = document.createElement('div');
+      row.className = 't-row';
+      var key = document.createElement('span');
+      key.className = 't-key';
+      key.style.background = it[2] || 'transparent';
+      var val = document.createElement('span');
+      val.className = 't-val';
+      val.textContent = it[1];
+      var name = document.createElement('span');
+      name.className = 't-name';
+      name.textContent = it[0];
+      row.appendChild(key); row.appendChild(val); row.appendChild(name);
+      tt.appendChild(row);
+    });
+    tt.style.display = 'block';
+    var w = tt.offsetWidth, h = tt.offsetHeight;
+    var x = cx + 14, y = cy - h - 10;
+    if (x + w > window.innerWidth - 8) x = cx - w - 14;
+    if (y < 8) y = cy + 14;
+    tt.style.left = x + 'px';
+    tt.style.top = Math.max(8, y) + 'px';
+  }
+  function hideTip() { tt.style.display = 'none'; }
+
+  document.querySelectorAll('.chart').forEach(function (card) {
+    var svg = card.querySelector('svg');
+    var dataEl = card.querySelector('script.chart-data');
+    if (!svg || !dataEl) return;
+    var d = JSON.parse(dataEl.textContent);
+    var ch = svg.querySelector('.crosshair');
+    var bars = svg.querySelectorAll('.bar');
+    var focusIdx = -1;
+
+    function slotCenter(i) { return d.x0 + i * d.step; }
+    function activate(i, clientX, clientY) {
+      i = Math.max(0, Math.min(d.slots.length - 1, i));
+      var cx = slotCenter(i);
+      if (ch) {
+        ch.setAttribute('x1', cx); ch.setAttribute('x2', cx);
+        ch.style.opacity = 1;
+      }
+      bars.forEach(function (b) {
+        b.classList.toggle('hover', +b.getAttribute('data-i') === i);
+      });
+      var r = svg.getBoundingClientRect();
+      var px = r.left + cx * r.width / d.vbw;
+      showTip(d.slots[i], clientX != null ? clientX : px,
+              clientY != null ? clientY : r.top + r.height / 2);
+      return i;
+    }
+    function deactivate() {
+      if (ch) ch.style.opacity = 0;
+      bars.forEach(function (b) { b.classList.remove('hover'); });
+      hideTip();
+      focusIdx = -1;
+    }
+
+    svg.addEventListener('pointermove', function (e) {
+      var r = svg.getBoundingClientRect();
+      var x = (e.clientX - r.left) * d.vbw / r.width;
+      if (x < d.x0 - d.step / 2 || x > d.x0 + (d.slots.length - 0.5) * d.step) {
+        deactivate(); return;
+      }
+      activate(Math.round((x - d.x0) / d.step), e.clientX, e.clientY);
+    });
+    svg.addEventListener('pointerleave', deactivate);
+
+    svg.setAttribute('tabindex', '0');
+    svg.setAttribute('role', 'img');
+    svg.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight') { focusIdx = activate(focusIdx + 1); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { focusIdx = activate(focusIdx <= 0 ? 0 : focusIdx - 1); e.preventDefault(); }
+      else if (e.key === 'Escape') deactivate();
+    });
+    svg.addEventListener('blur', deactivate);
+  });
+})();
+</script>
+</body>
+</html>

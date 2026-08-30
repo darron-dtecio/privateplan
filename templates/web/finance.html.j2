@@ -1,0 +1,191 @@
+{% extends "_base.html.j2" %}
+{% block title %}Personal Finance — workspace{% endblock %}
+{% block heading %}Personal Finance{% endblock %}
+{% block subheading %}<a href="/">← home</a> · <a href="/stocks">stock analysis</a>
+{% if has_dashboard %} · <a href="/finance/dashboard">open dashboard</a>{% endif %}
+ · all data stays in <code>finance_data/</code> (gitignored, local){% endblock %}
+
+{% block content %}
+<div class="card">
+  <h2>Pipeline status</h2>
+  <table>
+    <tr><th>Stage</th><th>Status</th></tr>
+    {% for s in status %}
+    <tr>
+      <td>{{ s.label }}</td>
+      <td>{% if s.ok %}<span class="badge ok">{{ s.state }}</span>{% else %}<span class="badge miss">{{ s.state }}</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% if running %}<p class="mut" style="margin:8px 0 0"><span class="badge run">a job is running</span></p>{% endif %}
+</div>
+
+<div class="card">
+  <h2>1 · Source documents</h2>
+  {% if uploaded or duplicates %}<p class="sub">
+    {% if uploaded %}{{ uploaded }} new document{{ '' if uploaded == 1 else 's' }} structurally checked and extracted.{% endif %}
+    {% if duplicates %}{{ duplicates }} exact duplicate{{ '' if duplicates == 1 else 's' }} skipped.{% endif %}
+  </p>{% endif %}
+  {% if inbox %}
+  <div style="overflow-x:auto">
+  <table>
+    <tr><th>File</th><th>Pipeline</th><th>Extracted</th><th>Included in analysis</th><th>Integration check</th></tr>
+    {% for f in inbox %}<tr>
+      <td class="mut">{{ f.name }} <span class="sub">({{ f.kb }} KB)</span></td>
+      <td>{{ f.format or 'pending' }}{% if f.pipeline %} · {{ f.pipeline|replace('_', ' ') }}{% endif %}</td>
+      <td>{{ f.extracted_at or 'pending' }}</td>
+      <td>{{ f.included_at or 'not yet' }}</td>
+      <td>{% if f.pipeline %}<span class="badge ok">routed</span>
+        <span class="sub">{{ f.matched }} structural match{{ '' if f.matched == 1 else 'es' }}{% if f.dedupe %}; dedupe: {{ f.dedupe }}{% endif %}</span>
+        {% else %}<span class="badge miss">pending</span>{% endif %}</td>
+    </tr>{% endfor %}
+  </table>
+  </div>
+  {% else %}
+  <p class="sub">No documents yet. Either paste OneDrive share links below and hit
+  <b>Download</b>, or download the files yourself and upload them here.</p>
+  {% endif %}
+  <form method="post" action="/finance/upload" enctype="multipart/form-data">
+    <label for="links">OneDrive share links (one per line{% if links_exists %} — saved links exist{% endif %})</label>
+    <textarea id="links" name="links" placeholder="https://1drv.ms/x/c/..."></textarea>
+    <label for="docs">Or upload documents (.pdf, .xlsx)</label>
+    <input type="file" id="docs" name="docs" multiple accept=".pdf,.xlsx,.csv">
+    <div class="btnrow">
+      <button type="submit" class="ghost">Save links / upload</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h2>2 · Run steps</h2>
+  <div class="btnrow">
+    <button type="button" data-step="download" class="ghost">Download from links</button>
+    <button type="button" data-step="extract">Extract documents</button>
+    <button type="button" data-step="analyze">Analyze</button>
+    <button type="button" data-step="render">Render dashboard</button>
+    <button type="button" data-step="prices" class="ghost">↻ Update prices</button>
+    <button type="button" data-step="portfolio" class="ghost">Analyze portfolio (slow)</button>
+    <button type="button" data-step="portfolio-render" class="ghost">Rebuild portfolio view</button>
+  </div>
+  <p class="mut" style="margin:8px 0 0"><b>Update prices</b> fetches a live quote for every holding and rebuilds both dashboards on it, so net worth, allocation and the projection move with the market instead of sitting at the statement date.</p>
+  <p class="mut" style="margin:8px 0 0"><b>Analyze portfolio</b> runs the SEC-backed stock analyzer against every individual company you hold and then builds the combined view — expect several minutes.</p>
+  <p class="mut" id="status" style="margin:10px 0 6px"></p>
+  <pre id="log"></pre>
+</div>
+
+<div class="card">
+  <h2>3 · Review &amp; complete your profile</h2>
+  <p class="sub">After extraction, verify every number and add what documents can't know
+  (account balances, spending, spouse info) — nothing sensitive ever leaves this machine.</p>
+  <div class="btnrow">
+    <a class="btn" href="/finance/intake">Open intake form{% if has_profile %} (saved){% endif %}</a>
+    {% if has_dashboard %}<a class="btn" href="/finance/dashboard" style="background:var(--s3)">Open dashboard</a>{% endif %}
+    {% if has_portfolio %}<a class="btn" href="/finance/portfolio" style="background:var(--s4)">Open portfolio view</a>{% endif %}
+  </div>
+</div>
+
+<div class="note">
+  Flow: <b>Download</b> (or upload) → <b>Extract</b> → review in the <b>intake form</b> →
+  <b>Analyze</b> → <b>Render</b>. Extraction logs show only field names and confidence —
+  never values — so they're safe to share when troubleshooting.
+</div>
+
+{% if request.args.get('reset') %}
+<div class="note" style="border-color:var(--s2)">
+  Removed {{ request.args.get('reset') }} item(s). They are recoverable from
+  <code>finance_data/.trash/{{ request.args.get('trash') }}/</code> until you delete that folder.
+</div>
+{% endif %}
+
+<div class="card" style="border-left:3px solid var(--s2)">
+  <h2>Sample data &amp; reset</h2>
+  <p class="sub">A fictional household — the Chens, mid-forties, retiring at 62 — with a
+  full set of documents to run through the pipeline. Nothing here touches the internet.</p>
+  <details>
+    <summary style="cursor:pointer">Load the sample household</summary>
+    <div class="btnrow" style="margin-top:.6rem">
+      <button type="button" data-step="load-sample-profile" class="ghost">Load finished profile</button>
+      <button type="button" data-step="load-sample-documents" class="ghost">Load documents only</button>
+      <button type="button" data-step="load-samples" class="ghost">Load both</button>
+    </div>
+    <p class="sub" style="margin-top:.5rem">
+      <b>Finished profile</b> gives you a complete plan to Analyze and Render immediately.
+      <b>Documents only</b> leaves the profile empty so you can watch extraction build it.
+      Loading a profile over one you already have is refused — clear your data first.
+    </p>
+  </details>
+
+  <details style="margin-top:.8rem">
+    <summary style="cursor:pointer;color:var(--s2)">Delete everything in finance_data/</summary>
+    <form method="post" action="/finance/reset" style="margin-top:.6rem">
+      <p class="sub">
+        Moves your profile, analysis, uploaded documents, extracted data and logs into
+        <code>finance_data/.trash/</code>. Recoverable until you delete that folder by hand.
+      </p>
+      <label style="display:block;margin:.4rem 0">
+        <input type="checkbox" name="keep_documents" value="1"> keep uploaded documents in the inbox
+      </label>
+      <label style="display:block;margin:.4rem 0">
+        <input type="checkbox" name="then_load" value="1"> reload the sample household afterwards
+      </label>
+      <label style="display:block;margin:.6rem 0">
+        Type <b>DELETE</b> to confirm:
+        <input type="text" name="confirm" autocomplete="off" placeholder="DELETE"
+               style="margin-left:.4rem;width:8rem">
+      </label>
+      <button type="submit" class="btn" style="background:var(--s2)">Delete my data</button>
+    </form>
+  </details>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var statusEl = document.getElementById('status');
+  var logEl = document.getElementById('log');
+  var buttons = document.querySelectorAll('[data-step]');
+  var timer = null;
+
+  function setBusy(b) { buttons.forEach(function (btn) { btn.disabled = b; }); }
+
+  function poll(jobId) {
+    fetch('/finance/job/' + jobId).then(function (r) { return r.json(); }).then(function (j) {
+      logEl.style.display = 'block';
+      logEl.textContent = j.log_tail || '(no output yet)';
+      logEl.scrollTop = logEl.scrollHeight;
+      if (j.status === 'running') {
+        statusEl.textContent = 'Running ' + j.step + '…';
+        timer = setTimeout(function () { poll(jobId); }, 1500);
+      } else {
+        statusEl.textContent = j.status === 'done'
+          ? j.step + ' finished. Reload the page to refresh status.'
+          : j.step + ' FAILED (exit ' + j.returncode + ') — see log above.';
+        setBusy(false);
+      }
+    }).catch(function () {
+      statusEl.textContent = 'Lost contact with the server.';
+      setBusy(false);
+    });
+  }
+
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      if (timer) clearTimeout(timer);
+      setBusy(true);
+      statusEl.textContent = 'Starting ' + btn.dataset.step + '…';
+      fetch('/finance/run/' + btn.dataset.step, { method: 'POST' })
+        .then(function (r) {
+          if (!r.ok) return r.text().then(function (t) { throw new Error(t); });
+          return r.json();
+        })
+        .then(function (j) { poll(j.job_id); })
+        .catch(function (e) {
+          statusEl.textContent = 'Could not start: ' + e.message;
+          setBusy(false);
+        });
+    });
+  });
+})();
+</script>
+{% endblock %}

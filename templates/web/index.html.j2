@@ -1,0 +1,166 @@
+{% extends "_base.html.j2" %}
+{% block title %}Stock Analysis — tickers{% endblock %}
+{% block heading %}Stock Analysis{% endblock %}
+{% block subheading %}<a href="/">← home</a> · analyzed tickers, data freshness, and dashboards{% endblock %}
+{% block topactions %}<a href="/finance" style="font-size:13px;font-weight:600">Personal finance →</a>{% endblock %}
+
+{% block content %}
+<style>
+td.pick, th.pick { width: 28px; padding-right: 4px; }
+input[type=checkbox] { width: 15px; height: 15px; cursor: pointer; accent-color: var(--s1); }
+.bulkbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 12px; }
+.bulkbar .count { font-size: 13px; color: var(--ink2); font-variant-numeric: tabular-nums; }
+.selectors { display: flex; gap: 10px; font-size: 12.5px; margin-top: 6px; }
+.selectors a { cursor: pointer; }
+</style>
+
+<div class="card">
+  <h2>Analyze a ticker</h2>
+  <form method="post" action="/new" style="display:flex;gap:8px;max-width:380px">
+    <input type="text" name="ticker" placeholder="e.g. AMD" required
+           pattern="[A-Za-z][A-Za-z0-9.\-]{0,9}" style="text-transform:uppercase">
+    <button type="submit">Open</button>
+  </form>
+  <p class="mut" style="margin:8px 0 0">Opens the ticker workspace where you can fetch data and render a dashboard.</p>
+</div>
+
+<div class="card">
+  <h2>Tickers</h2>
+  {% if rows %}
+  <div class="selectors">
+    <a id="sel-all">select all</a> ·
+    <a id="sel-none">select none</a> ·
+    <a id="sel-stale">select missing or stale</a>
+  </div>
+  <form id="bulkform">
+  <div class="overx">
+  <table>
+    <tr>
+      <th class="pick"><input type="checkbox" id="check-all" title="Select all"></th>
+      <th>Ticker</th><th>Dashboard</th><th>Fundamentals</th><th>Forecast</th>
+      <th>Sentiment</th><th>Narrative</th><th></th>
+    </tr>
+    {% for r in rows %}
+    <tr>
+      <td class="pick"><input type="checkbox" class="pick-one" name="tickers"
+            value="{{ r.ticker }}" data-missing="{{ 1 if r.needs_analysis else 0 }}"></td>
+      <td><a href="/ticker/{{ r.ticker }}"><b>{{ r.ticker }}</b></a>
+          {% if r.is_fund %}<span class="badge" title="An ETF or fund — no SEC fundamentals or forecast; analysed from holdings, cost and exposure">fund</span>{% endif %}
+          {% if r.running %}<span class="badge run">running</span>{% endif %}</td>
+      <td>{% if r.dashboard %}<a href="/dashboard/{{ r.ticker }}">view</a> <span class="mut">{{ r.dashboard_age }}</span>{% else %}<span class="badge miss">none</span>{% endif %}</td>
+      {% for want in ["financials.json", "forecast.json", "sentiment.json", "narrative.json"] %}
+      {% set f = (r.files | selectattr("name", "equalto", want) | first) %}
+      <td>{% if not f.applies %}<span class="mut" title="Does not apply to a fund">n/a</span>
+          {% elif f.present %}<span class="badge ok">{{ f.age }}</span>
+          {% else %}<span class="badge miss">—</span>{% endif %}</td>
+      {% endfor %}
+      <td><a href="/ticker/{{ r.ticker }}">manage →</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+
+  <div class="bulkbar">
+    <button type="button" id="bulk-run" disabled>Analyze selected</button>
+    <label style="margin:0;display:flex;align-items:center;gap:6px">
+      <input type="checkbox" id="with-sentiment"> <span>include social sentiment (slower)</span>
+    </label>
+    <span class="count" id="sel-count">0 selected</span>
+  </div>
+  </form>
+  <p class="mut" id="bulk-status" style="margin:10px 0 6px"></p>
+  <pre id="log"></pre>
+  {% else %}
+  <p class="sub">No tickers yet — analyze one above.</p>
+  {% endif %}
+</div>
+
+<div class="note">
+  <b>Analyze selected</b> runs fetch + render for each checked ticker in one background job:
+  SEC fundamentals, market data, analyst estimates, filings and the 12-quarter forecast.
+  ETFs and funds are detected automatically and analysed on cost, holdings and sector mix
+  instead, since they have no company fundamentals.
+  Narrative, web research and assumption overrides are Claude-authored — run
+  <code>/analyze &lt;TICKER&gt;</code> in Claude Code for those.
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('.pick-one'));
+  if (!boxes.length) return;
+  var runBtn = document.getElementById('bulk-run');
+  var countEl = document.getElementById('sel-count');
+  var statusEl = document.getElementById('bulk-status');
+  var logEl = document.getElementById('log');
+  var checkAll = document.getElementById('check-all');
+  var timer = null;
+
+  function selected() { return boxes.filter(function (b) { return b.checked; }); }
+  function sync() {
+    var n = selected().length;
+    countEl.textContent = n + ' selected';
+    runBtn.disabled = n === 0;
+    checkAll.checked = n === boxes.length;
+    checkAll.indeterminate = n > 0 && n < boxes.length;
+  }
+  function setAll(v) { boxes.forEach(function (b) { b.checked = v; }); sync(); }
+
+  boxes.forEach(function (b) { b.addEventListener('change', sync); });
+  checkAll.addEventListener('change', function () { setAll(checkAll.checked); });
+  document.getElementById('sel-all').addEventListener('click', function () { setAll(true); });
+  document.getElementById('sel-none').addEventListener('click', function () { setAll(false); });
+  document.getElementById('sel-stale').addEventListener('click', function () {
+    boxes.forEach(function (b) { b.checked = b.dataset.missing === '1'; });
+    sync();
+  });
+
+  function poll(jobId) {
+    fetch('/job/' + jobId).then(function (r) { return r.json(); }).then(function (j) {
+      logEl.style.display = 'block';
+      logEl.textContent = j.log_tail || '(starting…)';
+      logEl.scrollTop = logEl.scrollHeight;
+      if (j.status === 'running') {
+        statusEl.textContent = 'Analyzing ' + j.ticker + ' …';
+        timer = setTimeout(function () { poll(jobId); }, 2000);
+      } else {
+        statusEl.textContent = j.status === 'done'
+          ? 'Finished. Reload the page to refresh freshness badges.'
+          : 'Batch FAILED (exit ' + j.returncode + ') — see log above.';
+        runBtn.disabled = false;
+        sync();
+      }
+    }).catch(function () {
+      statusEl.textContent = 'Lost contact with the server.';
+      runBtn.disabled = false;
+    });
+  }
+
+  runBtn.addEventListener('click', function () {
+    var picked = selected().map(function (b) { return b.value; });
+    if (!picked.length) return;
+    if (picked.length > 5 &&
+        !confirm('Analyze ' + picked.length + ' tickers? This can take several minutes.')) return;
+    if (timer) clearTimeout(timer);
+    runBtn.disabled = true;
+    statusEl.textContent = 'Starting batch of ' + picked.length + '…';
+    var fd = new FormData();
+    picked.forEach(function (t) { fd.append('tickers', t); });
+    if (document.getElementById('with-sentiment').checked) fd.set('with_sentiment', '1');
+    fetch('/run-bulk', { method: 'POST', body: fd })
+      .then(function (r) {
+        if (!r.ok) return r.text().then(function (t) { throw new Error(t); });
+        return r.json();
+      })
+      .then(function (j) { poll(j.job_id); })
+      .catch(function (e) {
+        statusEl.textContent = 'Could not start: ' + e.message;
+        runBtn.disabled = false;
+      });
+  });
+
+  sync();
+})();
+</script>
+{% endblock %}

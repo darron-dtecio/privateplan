@@ -1,0 +1,41 @@
+{
+ "_note": "FICTIONAL sample. Declares which accounts pay an advisory fee. Nothing else in the pipeline can tell: parsed statements identify accounts only by a masked number (e.g. *1234) and never name the institution, so this is stated by you rather than guessed. Keys starting with _ are documentation and are ignored. Copy this to finance_data/advisory_fees.json and edit it for your own accounts, or empty the arrays if you pay no advisory fee.",
+
+ "_help_accounts": "One entry per advised account. 'match' is compared case-insensitively as a SUBSTRING against the account labels in your extracted documents — the masked number is the reliable part, and the page flags an entry that matches nothing. 'annual_rate' is the published schedule as a decimal (0.011 = 1.10%/yr). 'value' is a fallback used only when 'match' finds no holdings.",
+ "accounts": [
+  {
+   "match": "*1234",
+   "institution": "Example Advisors",
+   "label": "Advised brokerage account",
+   "annual_rate": 0.0105,
+   "billed": "quarterly",
+   "value": 240000
+  }
+ ],
+
+ "_help_charges": "The advisory fees actually billed, off your statements. Optional but worth entering: with two or more, the effective rate is measured from what you were charged rather than assumed from the schedule, and any gap between the two is reported. Sign is ignored. Four quarterly charges are treated as covering a full year, not the nine months their dates span.",
+ "charges": [
+  {"account": "*1234", "date": "2025-10-01", "amount": 604.25},
+  {"account": "*1234", "date": "2026-01-02", "amount": 618.40},
+  {"account": "*1234", "date": "2026-04-01", "amount": 627.15},
+  {"account": "*1234", "date": "2026-07-01", "amount": 636.80}
+ ],
+
+ "_help_returns": "Optional. Period returns for the account and the benchmark you judge it against, as decimals, one entry per period (annual periods assumed). Supplying these turns on a t-test of realised excess return. With the few periods a statement history gives, the honest answer is almost always 'cannot distinguish from luck', and the page says so rather than declaring a winner.",
+ "returns_are_net_of_fee": true,
+ "returns": [
+  {"account": "*1234", "account_return": 0.104, "benchmark_return": 0.118},
+  {"account": "*1234", "account_return": 0.071, "benchmark_return": 0.065},
+  {"account": "*1234", "account_return": 0.142, "benchmark_return": 0.151}
+ ],
+
+ "_help_benchmark": "Two yardsticks, two questions. 'benchmark' is the headline one and answers 'should I have just bought the index instead' — a single broad fund, because that is the alternative actually on offer. 'benchmark_blend' answers the different question 'did the advice earn its keep for the risk it took', and for that the comparison has to hold the same shape of portfolio: \"auto\" builds it from what the account actually holds (equity against equity, bonds against bonds, cash against cash, with preferreds and convertibles counted as credit); a list like [[\"VTI\", 0.87], [\"BND\", 0.13]] pins it; false turns the second comparison off. 'benchmark_symbols' picks the building blocks the auto blend is mixed from. Any symbol named here is fetched by prices.py --history whether or not you hold it.",
+ "benchmark": "VTI",
+ "benchmark_blend": "auto",
+ "benchmark_symbols": {"us_equity": "VTI", "intl_equity": "VXUS", "bonds": "BND", "cash": "BIL"},
+
+ "_help_assumptions": "passive_alternative_er: what the same market exposure costs as a broad index fund (0.0003 = 0.03%). tracking_error: annualised standard deviation of the account's return around its benchmark — 0.04 is typical for a diversified managed account, higher if concentrated. This drives how many years of record would be needed to prove the advisor is earning the fee, so change it if you think it's wrong. growth: assumed annual return for the compounding projection.",
+ "passive_alternative_er": 0.0003,
+ "tracking_error": 0.04,
+ "growth": 0.058
+}

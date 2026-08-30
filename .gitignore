@@ -1,0 +1,25 @@
+# ---- personal data: never commit -------------------------------------------
+# Everything the app learns about you lives here. See docs/PRIVACY.md.
+finance_data/
+
+# ---- generated stock-research artifacts ------------------------------------
+# Derived from your own holdings; regenerate rather than commit.
+data/
+dashboards/
+
+# ---- python ----------------------------------------------------------------
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# ---- editor / OS -----------------------------------------------------------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ---- local agent settings --------------------------------------------------
+.claude/settings.local.json

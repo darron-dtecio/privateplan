@@ -1,0 +1,12 @@
+{
+  "code": "ID",
+  "name": "Idaho",
+  "tax_year": 2026,
+  "source": "Idaho flat income tax rate, estimated for 2026. Verify with the state revenue department.",
+  "kind": "flat",
+  "rate": 0.05695,
+  "estimate": true,
+  "taxes_social_security": false,
+  "taxes_retirement_income": "full",
+  "index_brackets": false
+}

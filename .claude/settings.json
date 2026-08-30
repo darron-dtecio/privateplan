@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python finance/selftest.py)",
+      "Bash(python finance/analyze.py:*)",
+      "Bash(python finance/render.py:*)",
+      "Bash(python finance/samples.py:*)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ]
+  }
+}

@@ -1,0 +1,119 @@
+{% extends "_base.html.j2" %}
+{% block title %}{{ s.ticker }} — Stock Analysis{% endblock %}
+{% block heading %}{{ s.ticker }}{% endblock %}
+{% block subheading %}<a href="/">home</a> · <a href="/stocks">← all tickers</a>{% if s.dashboard %} · <a href="/dashboard/{{ s.ticker }}">open dashboard</a> <span class="mut">(rendered {{ s.dashboard_age }})</span>{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+  <h2>Data status</h2>
+  {% if s.is_fund %}
+  <p class="mut" style="margin:0 0 8px">{{ s.ticker }} is a fund. It has no SEC
+    fundamentals, estimates or forecast of its own — a fund is a basket, so its
+    dashboard is built from holdings, cost and exposure instead. Those datasets
+    are not listed below because they do not apply, rather than being missing.</p>
+  {% endif %}
+  <table>
+    <tr><th>Dataset</th><th>File</th><th>Freshness</th></tr>
+    {% for f in s.files if f.applies %}
+    <tr>
+      <td>{{ f.label }}</td>
+      <td class="mut">data/{{ s.ticker }}/{{ f.name }}</td>
+      <td>{% if f.present %}<span class="badge ok">{{ f.age }}</span>{% else %}<span class="badge miss">missing</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<div class="card">
+  <h2>Run pipeline steps</h2>
+  <form id="runform">
+    <label for="ir_xlsx">IR workbook URL (.xlsx, optional — used by Fetch)</label>
+    <input type="text" id="ir_xlsx" name="ir_xlsx" placeholder="https://.../FinancialStatementFY26Q4.xlsx">
+
+    <label for="doc_urls">Extra document URLs or local paths — one per line (HTML, PDF, CSV, XLSX; used by Fetch / Documents)</label>
+    <textarea id="doc_urls" name="doc_urls" placeholder="https://example.com/earnings-deck.pdf&#10;C:\Users\me\Downloads\model.xlsx"></textarea>
+
+    <label for="doc_files">Or upload documents</label>
+    <input type="file" id="doc_files" name="doc_files" multiple accept=".html,.htm,.pdf,.csv,.xlsx,.txt">
+
+    <div class="btnrow">
+      <button type="button" data-step="fetch">Fetch everything</button>
+      <button type="button" data-step="sources" class="ghost">Documents only</button>
+      <button type="button" data-step="sentiment" class="ghost">Sentiment only</button>
+      {% if not s.is_fund %}
+      <button type="button" data-step="forecast" class="ghost">Re-run forecast</button>
+      {% endif %}
+      <button type="button" data-step="render" class="ghost">Render dashboard</button>
+    </div>
+  </form>
+  <p class="mut" id="status" style="margin:10px 0 6px"></p>
+  <pre id="log"></pre>
+</div>
+
+<div class="note">
+  {% if s.is_fund %}
+  <b>Fetch everything</b> takes the fund path: cost, top holdings, sector weightings and
+  asset classes, then rebuilds the fund dashboard. There is no forecast step — no revenue
+  or earnings to project.
+  {% else %}
+  <b>Fetch everything</b> pulls SEC fundamentals, market data, estimates, filings/documents,
+  sentiment, and re-runs the forecast.{% endif %} The narrative, web research, assumption overrides, and
+  X/Twitter sentiment require running <code>/analyze {{ s.ticker }}</code> in Claude Code —
+  after that, hit <b>Render dashboard</b> here to refresh the page.
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var statusEl = document.getElementById('status');
+  var logEl = document.getElementById('log');
+  var buttons = document.querySelectorAll('[data-step]');
+  var timer = null;
+
+  function setBusy(b) {
+    buttons.forEach(function (btn) { btn.disabled = b; });
+  }
+
+  function poll(jobId) {
+    fetch('/job/' + jobId).then(function (r) { return r.json(); }).then(function (j) {
+      logEl.style.display = 'block';
+      logEl.textContent = j.log_tail || '(no output yet)';
+      logEl.scrollTop = logEl.scrollHeight;
+      if (j.status === 'running') {
+        statusEl.textContent = 'Running ' + j.step + ' for ' + j.ticker + '…';
+        timer = setTimeout(function () { poll(jobId); }, 1500);
+      } else {
+        statusEl.textContent = j.status === 'done'
+          ? j.step + ' finished. Reload the page to refresh data status.'
+          : j.step + ' FAILED (exit ' + j.returncode + ') — see log above.';
+        setBusy(false);
+      }
+    }).catch(function () {
+      statusEl.textContent = 'Lost contact with the server.';
+      setBusy(false);
+    });
+  }
+
+  buttons.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      if (timer) clearTimeout(timer);
+      setBusy(true);
+      statusEl.textContent = 'Starting ' + btn.dataset.step + '…';
+      var fd = new FormData(document.getElementById('runform'));
+      fd.set('step', btn.dataset.step);
+      fetch('/run/{{ s.ticker }}', { method: 'POST', body: fd })
+        .then(function (r) {
+          if (!r.ok) return r.text().then(function (t) { throw new Error(t); });
+          return r.json();
+        })
+        .then(function (j) { poll(j.job_id); })
+        .catch(function (e) {
+          statusEl.textContent = 'Could not start: ' + e.message;
+          setBusy(false);
+        });
+    });
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,9 @@
+{
+  "code": "NH", "name": "New Hampshire", "tax_year": 2026,
+  "source": "No state income tax on wages or retirement income.",
+  "kind": "none",
+  "estimate": false,
+  "taxes_social_security": false,
+  "taxes_retirement_income": "full",
+  "index_brackets": false
+}

@@ -1,0 +1,12 @@
+{
+  "folders": [{ "path": "." }],
+  "settings": {
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+    "python.analysis.extraPaths": [
+      "${workspaceFolder}/finance",
+      "${workspaceFolder}/pipeline"
+    ],
+    "files.exclude": { "**/__pycache__": true },
+    "search.exclude": { "finance_data/**": true, "data/**": true, "dashboards/**": true }
+  }
+}

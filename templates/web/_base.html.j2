@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Stock Analysis{% endblock %}</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb;
+  --ink: #0b0b0b; --ink2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --baseline: #c3c2b7; --border: rgba(11,11,11,0.10);
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #8b5cf6;
+  --good: #006300; --bad: #d03b3b;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19;
+  --ink: #ffffff; --ink2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #9d7bf0;
+  --good: #0ca30c; --bad: #d03b3b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19;
+    --ink: #ffffff; --ink2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #9d7bf0;
+    --good: #0ca30c; --bad: #d03b3b;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink);
+  font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 24px 20px 48px; }
+a { color: var(--s1); }
+h1 { font-size: 24px; margin: 0; font-weight: 650; }
+h2 { font-size: 16px; margin: 0 0 6px; font-weight: 600; }
+.sub { color: var(--ink2); font-size: 13px; }
+.mut { color: var(--muted); font-size: 12px; }
+.card { background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 18px 20px; margin-top: 16px; }
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#theme-btn { background: var(--surface); color: var(--ink2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 5px 12px; cursor: pointer; font-size: 13px; }
+table { border-collapse: collapse; width: 100%; margin-top: 8px; font-size: 13.5px; }
+th { text-align: left; color: var(--ink2); font-weight: 600;
+  border-bottom: 1px solid var(--baseline); padding: 6px 12px 6px 0; }
+td { border-bottom: 1px solid var(--grid); padding: 6px 12px 6px 0; }
+.badge { display: inline-block; font-size: 11.5px; font-weight: 600; border-radius: 999px;
+  padding: 0 9px; border: 1px solid var(--border); color: var(--ink2); white-space: nowrap; }
+.badge.ok { color: var(--good); border-color: var(--good); }
+.badge.miss { color: var(--muted); }
+.badge.run { color: var(--s2); border-color: var(--s2); }
+button, .btn { background: var(--s1); color: #fff; border: none; border-radius: 8px;
+  padding: 7px 14px; cursor: pointer; font-size: 13.5px; font-weight: 600; }
+button.ghost { background: var(--surface); color: var(--ink2); border: 1px solid var(--border); }
+button:disabled { opacity: .45; cursor: default; }
+input[type=text], textarea { width: 100%; background: var(--page); color: var(--ink);
+  border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; font: inherit; }
+textarea { min-height: 64px; }
+label { font-size: 13px; color: var(--ink2); display: block; margin: 10px 0 4px; }
+.btnrow { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+pre#log { background: var(--page); border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px; font-size: 12.5px; max-height: 340px; overflow: auto;
+  white-space: pre-wrap; display: none; }
+.note { border-left: 3px solid var(--s2); padding: 8px 12px; background: var(--page);
+  border-radius: 0 8px 8px 0; font-size: 13px; color: var(--ink2); margin-top: 14px; }
+footer { margin-top: 22px; }
+.note a { font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="topbar">
+  <div>
+    <h1>{% block heading %}Stock Analysis{% endblock %}</h1>
+    <div class="sub">{% block subheading %}{% endblock %}</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    {% block topactions %}{% endblock %}
+    <button id="theme-btn" type="button">◐ Theme</button>
+  </div>
+</div>
+{% block content %}{% endblock %}
+<footer class="mut">Stock Analysis pipeline · local UI · not investment advice</footer>
+</div>
+<script>
+(function () {
+  var btn = document.getElementById('theme-btn');
+  var stored = localStorage.getItem('dash-theme');
+  if (stored) document.documentElement.setAttribute('data-theme', stored);
+  btn.addEventListener('click', function () {
+    var cur = document.documentElement.getAttribute('data-theme');
+    var dark = cur ? cur === 'dark'
+      : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var next = dark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('dash-theme', next);
+  });
+})();
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

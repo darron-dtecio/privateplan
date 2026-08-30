@@ -1,0 +1,178 @@
+{
+  "code": "NY",
+  "name": "New York",
+  "tax_year": 2026,
+  "source": "NY Department of Taxation and Finance rate schedules, estimated for 2026.",
+  "kind": "brackets",
+  "estimate": true,
+  "filing_status": {
+    "mfj": {
+      "brackets": [
+        [
+          17150,
+          0.04
+        ],
+        [
+          23600,
+          0.045
+        ],
+        [
+          27900,
+          0.0525
+        ],
+        [
+          161550,
+          0.055
+        ],
+        [
+          323200,
+          0.06
+        ],
+        [
+          2155350,
+          0.0685
+        ],
+        [
+          5000000,
+          0.0965
+        ],
+        [
+          25000000,
+          0.103
+        ],
+        [
+          null,
+          0.109
+        ]
+      ],
+      "standard_deduction": 16050
+    },
+    "single": {
+      "brackets": [
+        [
+          8500,
+          0.04
+        ],
+        [
+          11700,
+          0.045
+        ],
+        [
+          13900,
+          0.0525
+        ],
+        [
+          80650,
+          0.055
+        ],
+        [
+          215400,
+          0.06
+        ],
+        [
+          1077550,
+          0.0685
+        ],
+        [
+          5000000,
+          0.0965
+        ],
+        [
+          25000000,
+          0.103
+        ],
+        [
+          null,
+          0.109
+        ]
+      ],
+      "standard_deduction": 8000
+    },
+    "hoh": {
+      "brackets": [
+        [
+          12800,
+          0.04
+        ],
+        [
+          17650,
+          0.045
+        ],
+        [
+          20900,
+          0.0525
+        ],
+        [
+          107650,
+          0.055
+        ],
+        [
+          269300,
+          0.06
+        ],
+        [
+          1616450,
+          0.0685
+        ],
+        [
+          5000000,
+          0.0965
+        ],
+        [
+          25000000,
+          0.103
+        ],
+        [
+          null,
+          0.109
+        ]
+      ],
+      "standard_deduction": 11200
+    },
+    "mfs": {
+      "brackets": [
+        [
+          8500,
+          0.04
+        ],
+        [
+          11700,
+          0.045
+        ],
+        [
+          13900,
+          0.0525
+        ],
+        [
+          80650,
+          0.055
+        ],
+        [
+          215400,
+          0.06
+        ],
+        [
+          1077550,
+          0.0685
+        ],
+        [
+          5000000,
+          0.0965
+        ],
+        [
+          25000000,
+          0.103
+        ],
+        [
+          null,
+          0.109
+        ]
+      ],
+      "standard_deduction": 8000
+    }
+  },
+  "taxes_social_security": false,
+  "taxes_retirement_income": "full",
+  "local_tax_note": "New York City and Yonkers levy their own income taxes, which are NOT included here.",
+  "index_brackets": true
+}

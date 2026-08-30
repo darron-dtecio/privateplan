@@ -1,0 +1,825 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Personal Finance — Retirement Outlook</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb;
+  --ink: #0b0b0b; --ink2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --baseline: #c3c2b7; --border: rgba(11,11,11,0.10);
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #8b5cf6;
+  --good: #006300; --bad: #d03b3b; --warn: #b57d00;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19;
+  --ink: #ffffff; --ink2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #9d7bf0;
+  --good: #0ca30c; --bad: #d03b3b; --warn: #d99e1b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19;
+    --ink: #ffffff; --ink2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #9d7bf0;
+    --good: #0ca30c; --bad: #d03b3b; --warn: #d99e1b;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink);
+  font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
+.wrap { max-width: 1080px; margin: 0 auto; padding: 24px 20px 48px; }
+a { color: var(--s1); }
+.card { background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 18px 20px; margin-top: 16px; }
+h1 { font-size: 26px; margin: 0; font-weight: 650; }
+h2 { font-size: 16px; margin: 0 0 4px; font-weight: 600; }
+h3 { font-size: 14px; margin: 0 0 6px; font-weight: 600; }
+.sub { color: var(--ink2); font-size: 13px; }
+.mut { color: var(--muted); font-size: 12px; }
+.topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.chip { display: inline-block; font-size: 12px; font-weight: 600; color: var(--ink2);
+  border: 1px solid var(--border); border-radius: 999px; padding: 1px 10px;
+  vertical-align: 3px; margin-left: 8px; }
+#theme-btn { background: var(--surface); color: var(--ink2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 5px 12px; cursor: pointer; font-size: 13px; }
+.back-link { display: inline-flex; align-items: center; gap: 4px; font-size: 13px;
+  font-weight: 600; color: var(--ink2); text-decoration: none; margin-bottom: 8px; }
+.back-link:hover { color: var(--s1); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 16px; }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.tile .label { font-size: 13px; color: var(--ink2); }
+.tile .value { font-size: 28px; font-weight: 600; line-height: 1.2; margin: 2px 0; }
+.tile .value.good { color: var(--good); } .tile .value.bad { color: var(--bad); }
+.tile .value.warn { color: var(--warn); }
+.tile .sub { font-size: 12px; color: var(--muted); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 800px) { .grid2 { grid-template-columns: 1fr; } }
+.chart svg { width: 100%; height: auto; display: block; }
+.chart svg:focus { outline: 2px solid var(--s1); outline-offset: 2px; border-radius: 6px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 18px; margin: 6px 0 2px; font-size: 12.5px; color: var(--ink2); }
+.legend .key { display: inline-flex; align-items: center; gap: 6px; }
+.key .swatch { width: 12px; height: 12px; border-radius: 3px; }
+.key .line { width: 16px; height: 2px; border-radius: 1px; }
+.key .band { width: 14px; height: 10px; border-radius: 2px; opacity: .35; }
+details { margin-top: 10px; }
+summary { cursor: pointer; color: var(--ink2); font-size: 13px; }
+table { border-collapse: collapse; width: 100%; margin-top: 8px; font-size: 13px; }
+th { text-align: left; color: var(--ink2); font-weight: 600; border-bottom: 1px solid var(--baseline); padding: 5px 10px 5px 0; }
+td { border-bottom: 1px solid var(--grid); padding: 5px 10px 5px 0; font-variant-numeric: tabular-nums; }
+td.lab, th.lab { font-variant-numeric: normal; }
+.num { text-align: right; } th.num { text-align: right; }
+.overx { overflow-x: auto; }
+ul { margin: 6px 0; padding-left: 20px; }
+li { margin: 3px 0; }
+.dist { display: flex; height: 14px; border-radius: 7px; overflow: hidden; gap: 2px; margin: 12px 0 6px; }
+.dist span { display: block; min-width: 2px; }
+.dist-legend { display: flex; gap: 4px 18px; flex-wrap: wrap; font-size: 12.5px; color: var(--ink2); }
+.dist-legend .key { display: inline-flex; align-items: center; gap: 6px; }
+.hbar { display: grid; grid-template-columns: 180px 1fr 110px; gap: 10px; align-items: center; margin: 6px 0; font-size: 13px; }
+.hbar .track { background: var(--grid); border-radius: 4px; height: 12px; overflow: hidden; }
+/* display:block matters — the fill is a <span>, and an inline box ignores both
+   the width the template sets and this height, so every bar renders empty */
+.hbar .fill { display: block; height: 100%; background: var(--s1); border-radius: 4px; }
+.hbar .fill.neg { background: var(--bad); }
+.hbar .val { text-align: right; font-variant-numeric: tabular-nums; }
+.rec { border-left: 3px solid var(--muted); padding: 10px 14px; margin-top: 10px;
+  background: var(--page); border-radius: 0 8px 8px 0; }
+.rec.action { border-left-color: var(--s1); }
+.rec.warning { border-left-color: var(--bad); }
+.rec h3 { margin: 0; }
+.rec p { margin: 4px 0 0; font-size: 13.5px; color: var(--ink2); }
+.sev { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  border-radius: 999px; padding: 1px 9px; border: 1px solid var(--border); color: var(--muted); margin-left: 8px; vertical-align: 2px; }
+.sev.action { color: var(--s1); border-color: var(--s1); }
+.sev.warning { color: var(--bad); border-color: var(--bad); }
+#tt { position: fixed; z-index: 10; pointer-events: none; display: none;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 12px; font-size: 13px; box-shadow: 0 4px 14px rgba(0,0,0,.14); max-width: 280px; }
+#tt .t-label { color: var(--ink2); font-size: 12px; margin-bottom: 3px; }
+#tt .t-row { display: flex; align-items: center; gap: 7px; }
+#tt .t-key { width: 12px; height: 2px; border-radius: 1px; flex: none; }
+#tt .t-val { font-weight: 600; }
+#tt .t-name { color: var(--ink2); font-size: 12px; }
+.crosshair { opacity: 0; }
+footer { margin-top: 22px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="topbar">
+  <div>
+    <a href="/finance" class="back-link">&larr; Finance workspace</a>
+    <h1>Retirement Outlook <span class="chip">local &amp; private</span></h1>
+    <div class="sub">Personal financial analysis · tax year {{ tax_year }} · generated {{ generated_at }}</div>
+  </div>
+  <button id="theme-btn" type="button">◐ Theme</button>
+</div>
+
+{% if data_gaps %}
+<div class="card" style="border-left:3px solid var(--bad)">
+  <h2>Incomplete profile — some numbers below are placeholders</h2>
+  <div class="sub">Fill these in at <a href="/finance/intake">/finance/intake</a>, then re-run Analyze and Render.</div>
+  <ul>
+    {% for g in data_gaps %}<li>{{ g }}</li>{% endfor %}
+  </ul>
+  <p class="mut" style="margin:6px 0 0">Anything driven by spending — sustainable spending, the spending gap, and the Monte Carlo success probability — is meaningless until retirement spending is set.</p>
+</div>
+{% endif %}
+
+<div class="tiles">
+  {% for t in tiles %}
+  <div class="tile">
+    <div class="label">{{ t.label }}</div>
+    <div class="value {{ t.cls or '' }}">{{ t.value }}</div>
+    {% if t.sub %}<div class="sub">{{ t.sub }}</div>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+{% macro chart_card(c) %}
+<div class="card chart" id="{{ c.id }}">
+  <h2>{{ c.title }}</h2>
+  <div class="sub">{{ c.subtitle }}</div>
+  {% if c.legend %}
+  <div class="legend">
+    {% for k in c.legend %}
+    <span class="key"><span class="{{ k.kind }}" style="background:{{ k.color }}"></span>{{ k.label }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {{ c.svg | safe }}
+  <script type="application/json" class="chart-data">{{ c.data_json | safe }}</script>
+  <details>
+    <summary>Table view</summary>
+    <div class="overx">
+    <table>
+      <tr>{% for h in c.table.head %}<th class="{{ 'num' if not loop.first else 'lab' }}">{{ h }}</th>{% endfor %}</tr>
+      {% for row in c.table.rows %}
+      <tr>{% for cell in row %}<td class="{{ 'num' if not loop.first else 'lab' }}">{{ cell }}</td>{% endfor %}</tr>
+      {% endfor %}
+    </table>
+    </div>
+  </details>
+</div>
+{% endmacro %}
+
+<div class="grid2">
+  <div class="card">
+    <h2>Where each month's gross pay goes</h2>
+    <div class="sub">Household gross {{ gross_monthly }}/mo while working.</div>
+    <div class="dist">
+      {% for p in cash_dist %}<span style="width:{{ p.w }}%;background:{{ p.color }}"></span>{% endfor %}
+    </div>
+    <div class="dist-legend">
+      {% for p in cash_dist %}
+      <span class="key"><span class="swatch" style="background:{{ p.color }}"></span>{{ p.name }} {{ p.value }}</span>
+      {% endfor %}
+    </div>
+    <table>
+      <tr><td class="lab">Take-home (after tax &amp; pre-tax savings)</td><td class="num">${{ "{:,}".format(cf.net_monthly) }}/mo</td></tr>
+      <tr><td class="lab">Current spending</td><td class="num">${{ "{:,}".format(cf.expenses_monthly) }}/mo</td></tr>
+      <tr><td class="lab">Surplus</td><td class="num">${{ "{:,}".format(cf.surplus_monthly) }}/mo</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Net worth composition</h2>
+    <div class="sub">Investable accounts, home value, and debts.
+      {% if pricing and pricing.applied %}Positions are valued at market prices from
+      {{ pricing.when }}, not at the statement date — <span class="{{ pricing.dir }}">{{ pricing.delta }}</span>
+      against the statement across {{ pricing.n_priced }} of {{ pricing.n }} positions
+      ({{ pricing.coverage }} of holdings value).
+      {% elif pricing %}Valued at statement prices — {{ pricing.reason }}.{% endif %}</div>
+    {% for r in comp %}
+    <div class="hbar">
+      <span class="lab">{{ r.name }}</span>
+      <span class="track"><span class="fill{{ ' neg' if r.neg }}" style="width:{{ r.w }}%"></span></span>
+      <span class="val">{{ r.value }}</span>
+    </div>
+    {% endfor %}
+    {% if pricing and pricing.applied and pricing.unpriced %}
+    <p class="mut" style="margin:8px 0 0">Held at statement value because there are no
+      positions to price against: {% for u in pricing.unpriced %}{{ u.name }} ({{ u.balance }}){% if not loop.last %}, {% endif %}{% endfor %}.
+      Those balances move with the market too — this page just cannot see it.</p>
+    {% endif %}
+    <p class="mut" style="margin:8px 0 0">Home equity counts toward net worth but is excluded from the retirement drawdown model.</p>
+  </div>
+</div>
+
+{% if k401 %}
+<div class="grid2">
+  <div class="card">
+    <h2>401(k) — validated against your paystub</h2>
+    <div class="sub">Every figure below is reconciled to the pay statement, not estimated.</div>
+    <table>
+      <tr><td class="lab">Deferral per paycheck ({{ k401.periods_per_year }}/yr)</td><td class="num">{{ k401.per_f }}</td></tr>
+      <tr><td class="lab">Employer match per paycheck</td><td class="num">{{ k401.match_per_f }}</td></tr>
+      <tr><td class="lab">Your elective deferral, annual</td><td class="num">{{ k401.elective_f }}</td></tr>
+      <tr><td class="lab">Employer match, annual</td><td class="num">{{ k401.match_f }}</td></tr>
+      <tr><td class="lab"><b>Total going into the plan</b></td><td class="num"><b>{{ k401.total_f }}</b></td></tr>
+    </table>
+    <div style="margin-top:12px">
+      <div class="sub">Employee limit at age {{ k401.age }}: <b>{{ k401.limit_f }}</b>
+        ({{ k401.base_limit_f }} base + {{ k401.catchup_f }} catch-up)</div>
+      <div class="dist" style="height:16px">
+        <span style="width:{{ k401.fill }}%;background:var(--s1)"></span>
+        <span style="width:{{ 100 - k401.fill }}%;background:var(--grid)"></span>
+      </div>
+      <div class="dist-legend">
+        <span class="key"><span class="swatch" style="background:var(--s1)"></span>contributed {{ k401.elective_f }}</span>
+        <span class="key"><span class="swatch" style="background:var(--grid)"></span>unused {{ k401.headroom_f }}</span>
+      </div>
+    </div>
+    {% if not k401.at_limit %}
+    <p class="sub" style="margin:10px 0 0">To reach the limit, raise the election from
+      <b>{{ k401.current_pct }}%</b> to about <b>{{ k401.needed_pct }}%</b> of base pay —
+      {{ k401.needed_per_f }} a paycheck instead of {{ k401.per_f }}.</p>
+    <p class="mut" style="margin:8px 0 0">Unused regular deferral headroom: <b>{{ k401.regular_headroom_f }}</b> (pre-tax or Roth per plan election). Roth-required catch-up headroom: <b>{{ k401.roth_headroom_f }}</b>.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Why the match does not close the gap</h2>
+    <p class="sub" style="margin:0 0 8px">These are two separate IRS limits, and the
+      employer match belongs to the second one:</p>
+    <table>
+      <tr><td class="lab">Employee elective deferral limit</td><td class="num">{{ k401.limit_f }}</td></tr>
+      <tr><td class="lab">— your deferral counts against it</td><td class="num">{{ k401.elective_f }}</td></tr>
+      <tr><td class="lab">— the match does <b>not</b></td><td class="num">$0</td></tr>
+      <tr><td class="lab">§415(c) total additions limit</td><td class="num">{{ k401.add_limit_f }}</td></tr>
+      <tr><td class="lab">— deferral + match count here</td><td class="num">{{ k401.total_f }}</td></tr>
+    </table>
+    <h3 style="margin-top:12px">Checks</h3>
+    <ul>
+      {% for c in k401.checks %}
+      <li><b style="color:var({{ '--good' if c.ok else '--bad' }})">{{ "PASS" if c.ok else "FAIL" }}</b>
+        — {{ c.name }}: {{ c.detail }}</li>
+      {% endfor %}
+    </ul>
+    {% if k401.roth_catchup_required %}
+    <p class="mut" style="margin:8px 0 0">Your wages exceed the SECURE 2.0 threshold, so
+      the {{ k401.catchup_f }} catch-up portion must be designated <b>Roth</b> rather than
+      pre-tax.</p>
+    {% endif %}
+    <p class="mut" style="margin:8px 0 0">The official 2026 age-60-to-63 catch-up is $11,250 ({{ k401.super_f }} total with the base limit). Future limits are indexed estimates, not presented as fixed IRS limits.</p>
+    {% for ig in k401.ignored_contributions %}
+    <p class="mut" style="margin:8px 0 0;color:var(--bad)">Ignored a duplicate
+      {{ "%.0f"|format(ig.amount) }}/yr contribution entered on “{{ ig.name }}” — that
+      money is already modelled from your salary % and match.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if sd %}
+{{ chart_card(charts.spending) }}
+<div class="grid2">
+  <div class="card">
+    <h2>Where the money goes</h2>
+    <div class="sub">Average per month across {{ sd.source_months }} months ({{ sd.first }} – {{ sd.last }}).</div>
+    <div class="overx">
+    <table>
+      <tr><th class="lab">Category</th><th class="num">Per month</th><th class="num">Share</th><th class="num">Txns</th></tr>
+      {% for r in spend_rows %}
+      <tr><td class="lab">{{ r.name }}</td><td class="num">{{ r.monthly }}</td><td class="num">{{ r.pct }}</td><td class="num">{{ r.n }}</td></tr>
+      {% endfor %}
+    </table>
+    </div>
+    <p class="mut" style="margin:8px 0 0">Credit-card payments are counted as spending — the underlying purchases never touch checking, so the payment is the only visible proxy. Transfers to investment accounts are excluded (that is saving, not spending).</p>
+  </div>
+  <div class="card">
+    <h2>Spending basis for the plan</h2>
+    <table>
+      <tr><td class="lab">Average, all {{ sd.source_months }} months</td><td class="num">${{ "{:,.0f}".format(sd.avg_monthly) }}/mo</td></tr>
+      <tr><td class="lab">Median month</td><td class="num">${{ "{:,.0f}".format(sd.median_monthly) }}/mo</td></tr>
+      <tr><td class="lab">Average, last 12 months</td><td class="num">${{ "{:,.0f}".format(sd.avg_monthly_recent12) }}/mo</td></tr>
+      <tr><td class="lab">— of which mortgage payment</td><td class="num">${{ "{:,.0f}".format(sd.avg_monthly_mortgage) }}/mo</td></tr>
+      <tr><td class="lab">Spending excluding mortgage</td><td class="num">${{ "{:,.0f}".format(sd.avg_monthly_ex_mortgage) }}/mo</td></tr>
+      {% if sd.one_off_monthly %}
+      <tr><td class="lab">One-off items, annualised (excluded)</td><td class="num">−${{ "{:,.0f}".format(sd.one_off_monthly) }}/mo</td></tr>
+      {% endif %}
+      {% if sd.recurring %}
+      <tr><td class="lab"><b>Recurring run rate — the planning basis</b></td><td class="num"><b>${{ "{:,.0f}".format(sd.recurring.avg_monthly) }}/mo</b></td></tr>
+      <tr><td class="lab">Recurring, last 12 months</td><td class="num">${{ "{:,.0f}".format(sd.recurring.avg_monthly_recent12) }}/mo</td></tr>
+      <tr><td class="lab">Recurring, excluding mortgage</td><td class="num">${{ "{:,.0f}".format(sd.recurring.avg_monthly_ex_mortgage) }}/mo</td></tr>
+      {% endif %}
+    </table>
+    <p class="sub" style="margin:10px 0 0">The plan uses the <b>last 12 months</b> as today's spending level. It removes observed recurring medical spending from lifestyle, then separately adds healthcare, mortgage P&amp;I, escrow, home-capital reserves, and scheduled purchases. Each expense is counted once.</p>
+    {% if sd.sources %}<p class="mut" style="margin:8px 0 0">Sources combined: {{ sd.sources | join(", ") }}.</p>{% endif %}
+  </div>
+</div>
+{% endif %}
+
+{% if oneoff_rows %}
+<div class="card">
+  <h2>Large one-off items</h2>
+  <div class="sub">Confirmed non-recurring: ${{ "{:,.0f}".format(sd.one_off_total) }} in total, which would have added ${{ "{:,.0f}".format(sd.one_off_monthly) }}/mo to the average. <b>These are excluded from the planning baseline</b> — they are real money already spent, but they will not repeat annually.</div>
+  <div class="overx">
+  <table>
+    <tr><th class="lab">Month</th><th class="lab">Description</th><th class="lab">Category</th><th class="num">Amount</th></tr>
+    {% for r in oneoff_rows %}
+    <tr><td class="lab">{{ r.month }}</td><td class="lab">{{ r.description }}</td><td class="lab">{{ r.category }}</td><td class="num">{{ r.amount }}</td></tr>
+    {% endfor %}
+  </table>
+  </div>
+  <p class="mut" style="margin:8px 0 0">The HVAC replacement, medical procedure, veterinary bill, and wood purchases remain historical one-offs. Future roof, HVAC, appliance, and structural work is covered by the separately modeled home-capital reserve.</p>
+</div>
+{% endif %}
+
+{% if recon_rows %}
+<div class="card">
+  <h2>Credit-card reconciliation</h2>
+  <div class="sub">Payments from checking to a card are transfers, not spending. Where a card statement is available, its payments are removed from checking and the card's actual purchases are counted instead — so the same money is never counted twice.</div>
+  <div class="overx">
+  <table>
+    <tr>
+      <th class="lab">Card</th><th class="lab">Statement window</th>
+      <th class="num">Paid from checking</th><th class="num">Payments on statement</th>
+      <th class="num">Delta</th><th class="num">Proxy removed</th>
+      <th class="num">Real charges added</th><th class="num">Months not covered</th>
+    </tr>
+    {% for r in recon_rows %}
+    <tr>
+      <td class="lab">{{ r.label }} <span class="src-badge">{{ r.issuer }}</span></td>
+      <td class="lab">{{ r.window }}</td>
+      <td class="num">{{ r.bank }}</td>
+      <td class="num">{{ r.card }}</td>
+      <td class="num">{{ r.delta }} ({{ r.delta_pct }})</td>
+      <td class="num">−{{ r.removed }}</td>
+      <td class="num">+{{ r.added }}</td>
+      <td class="num">{{ r.uncovered }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  </div>
+  <p class="mut" style="margin:8px 0 0">A small delta is normal — a payment near the edge of the statement window lands in one record but not the other. Months outside the statement window keep the payment as a proxy, so no spending is dropped. Cards without a statement (e.g. Citi) still use the payment proxy.</p>
+</div>
+{% endif %}
+
+{% if vest %}
+<div class="card">
+  <h2>Unvested equity in the plan</h2>
+  <div class="sub">{{ vest.n }} vesting event{{ "" if vest.n == 1 else "s" }} still ahead
+    — <b>{{ vest.shares }} shares</b> between {{ vest.first }} and {{ vest.last }}.
+    {% if vest.priced %}Valued at {{ vest.symbol }} {{ vest.price }}, today's price,
+    with no growth assumed.{% else %}Not valued: no share price available, so these
+    shares are listed but contribute nothing to the projection.{% endif %}</div>
+
+  {% if vest.priced %}
+  <div class="tiles">
+    <div class="tile">
+      <div class="label">Value at today's price</div>
+      <div class="value">{{ vest.gross }}</div>
+      <div class="sub">before tax</div>
+    </div>
+    <div class="tile">
+      <div class="label">What reaches the portfolio</div>
+      <div class="value good">{{ vest.net }}</div>
+      <div class="sub">after {{ vest.withholding }} withholding{% if vest.withholding_measured %},
+        measured from {{ vest.withholding_n }} past vests{% endif %}</div>
+    </div>
+    {% if vest.years_bought %}
+    <div class="tile">
+      <div class="label">Extra years of plan</div>
+      <div class="value good">+{{ vest.years_bought }}</div>
+      <div class="sub">money lasts to {{ vest.depleted_with }} instead of
+        {{ vest.depleted_without }}</div>
+    </div>
+    {% elif vest.end_delta %}
+    <div class="tile">
+      <div class="label">Added to the end balance</div>
+      <div class="value good">{{ vest.end_delta }}</div>
+      <div class="sub">{{ vest.end_without }} without it</div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="overx" style="margin-top:12px">
+  <table>
+    <tr><th class="lab">Year</th><th class="num">Vest dates</th><th class="num">Shares</th>
+      <th class="num">Value</th><th class="num">After tax</th></tr>
+    {% for r in vest.rows %}
+    <tr><td class="lab">{{ r.year }}</td><td class="num">{{ r.dates }}</td>
+      <td class="num">{{ r.shares }}</td><td class="num">{{ r.gross }}</td>
+      <td class="num">{{ r.net }}</td></tr>
+    {% endfor %}
+  </table>
+  </div>
+
+  {% if vest.conditions %}
+  <div class="card" style="border-left:3px solid var(--warn);margin-top:12px;padding:10px 12px">
+    <b>These shares are not unconditional.</b>
+    {{ vest.n_conditional }} of the {{ vest.n }} events vest only under a stated
+    provision:
+    {% for c in vest.conditions %}<div class="sub">— {{ c }}</div>{% endfor %}
+    <div class="sub" style="margin-top:6px">The plan
+      {% if vest.include_conditional %}counts them in full, which assumes the
+      provision applies. Set <code>equity_comp.include_conditional</code> to
+      false in profile.json to exclude them and see the plan without.
+      {% else %}excludes them.{% endif %}</div>
+  </div>
+  {% endif %}
+
+  <p class="mut" style="margin:8px 0 0">Only vests dated after today are counted — earlier
+    ones are already inside the account balances this plan reads, and counting them again
+    would double the money. A vest is ordinary income on the day it lands, so the tax comes
+    off before anything is invested; the net is added to the taxable bucket with its own
+    cost basis, so it is not taxed a second time on the way out.
+    {%- if vest.has_options %} Options are valued at their spread over the strike, never at
+    the full share price, and at nothing when they are underwater.{% endif %}
+    The share price is held flat: growing one employer's stock at the plan's return
+    assumption would make the whole projection lean on a forecast of a single company.</p>
+</div>
+{% endif %}
+
+{% if inv_rows %}
+<div class="grid2">
+  <div class="card">
+    <h2>Investment activity</h2>
+    <div class="sub">{{ ia.n_months }} months of transaction history ({{ ia.first_month }} – {{ ia.last_month }}).
+      {% if ia.activity_unique_rows is defined %}{{ ia.activity_unique_rows }} unique rows retained;
+      {{ ia.activity_duplicate_rows_excluded }} overlapping source rows excluded.{% endif %}</div>
+    <div class="overx">
+    <table>
+      <tr><th class="lab">Activity</th><th class="num">Transactions</th><th class="num">Net amount</th></tr>
+      {% for r in inv_rows %}
+      <tr><td class="lab">{{ r.name }}</td><td class="num">{{ r.n }}</td><td class="num">{{ r.total }}</td></tr>
+      {% endfor %}
+    </table>
+    </div>
+    <p class="mut" style="margin:8px 0 0">Rollovers and internal transfers are shown for completeness but are not income or spending — moving a 401(k) to an IRA is not a cash event.</p>
+  </div>
+  <div class="card">
+    <h2>What the activity tells us</h2>
+    <table>
+      <tr><td class="lab">Plan contributions</td><td class="num">${{ "{:,.0f}".format(ia.contributions_monthly) }}/mo</td></tr>
+      <tr><td class="lab">HSA / medical spending</td><td class="num">${{ "{:,.0f}".format(ia.hsa_spending_monthly) }}/mo</td></tr>
+      <tr><td class="lab">Dividends &amp; interest received</td><td class="num">${{ "{:,.0f}".format(ia.dividends_total) }}</td></tr>
+      <tr><td class="lab">Shares deposited (RSU/ESPP)</td><td class="num">${{ "{:,.0f}".format(ia.rsu_espp_total) }}</td></tr>
+      <tr><td class="lab">Fees paid</td><td class="num">${{ "{:,.0f}".format(ia.fees_total) }}</td></tr>
+      {% if ia.loan_active %}
+      <tr><td class="lab">401(k) loan repayments</td><td class="num">${{ "{:,.0f}".format(ia.loan_repayment_monthly) }}/mo</td></tr>
+      {% elif ia.loan_payoff_detected %}
+      <tr><td class="lab">401(k) loan</td><td class="num" style="color:var(--good)">paid off {{ ia.loan_last_repayment_month }}</td></tr>
+      {% endif %}
+    </table>
+    <p class="sub" style="margin:10px 0 0">HSA spending never touches the checking account, so it would be invisible without this file — it is added to the spending total above.</p>
+  </div>
+</div>
+
+{% endif %}
+
+{% if hold_rows %}
+<div class="card">
+  <h2>Investment holdings</h2>
+  <div class="sub">From your workbook and post-statement activity — {{ holdings.n }} position(s), total {{ holdings_total }}. All positions shown.
+    {% if pricing and pricing.applied %}Share counts are the statement's; prices are live from
+    {{ pricing.when }}, so the change column is market movement since the statement, not trading.
+    {% endif %}</div>
+  <div class="overx" style="max-height:520px;overflow:auto">
+  <table>
+    <tr><th class="lab">Symbol</th><th class="num">Market value</th><th class="num">% of investable portfolio</th>
+      {% if pricing and pricing.applied %}<th class="num">Price</th><th class="num">Since statement</th>{% endif %}</tr>
+    {% for h in hold_rows %}
+    <tr><td class="lab">{{ h.symbol }}</td><td class="num">{{ h.value }}</td><td class="num">{{ h.pct }}</td>
+      {% if pricing and pricing.applied %}
+      <td class="num">{{ h.price or "—" }}</td>
+      <td class="num {{ h.dir if h.change }}">{{ h.change or "—" }}</td>
+      {% endif %}</tr>
+    {% endfor %}
+  </table>
+  </div>
+  {% if pricing and pricing.applied %}
+  <p class="mut" style="margin:8px 0 0">A position with no price shown could not be repriced —
+    no quote, or a share count covering only part of it — so it stands at its statement value
+    rather than being scaled up from a partial quantity.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+<div id="retirement-outlook">{{ chart_card(charts.projection) }}</div>
+
+{% if goal_rows %}
+<div class="card" id="financial-goals">
+  <h2>Financial goals</h2>
+  <div class="sub">Structured targets evaluated by the deterministic plan. Chat may model changes, but saved goals require confirmation.</div>
+  <div class="overx"><table>
+    <tr><th>Goal</th><th>Current</th><th>Target</th><th>Status</th></tr>
+    {% for g in goal_rows %}<tr><td><b>{{ g.title }}</b><div class="mut">{{ g.type }} · {{ g.priority }}</div></td>
+      <td>{{ g.actual }}</td><td>{{ g.target }}</td><td><span class="src-badge">{{ g.status|replace('_',' ') }}</span></td></tr>{% endfor %}
+  </table></div>
+</div>
+{% endif %}
+
+<div class="grid2">
+  <div class="card">
+    <h2>Retirement expense bridge</h2>
+    <div class="sub">First retirement year; partial-year values where applicable. Lifestyle excludes {{ assumptions.observed_medical_monthly | round(0) | int }} dollars/month of observed recurring medical spending.</div>
+    <table>
+      <tr><th class="lab">Component</th><th class="num">Annual</th><th class="num">Monthly equivalent</th><th class="lab">Source</th></tr>
+      {% for r in expense_bridge %}<tr><td class="lab">{{ r.name }}</td><td class="num">{{ r.annual }}</td><td class="num">{{ r.monthly }}</td><td class="lab"><span class="src-badge">{{ r.source }}</span></td></tr>{% endfor %}
+    </table>
+    <p class="mut" style="margin:8px 0 0">Included in lifestyle: routine fuel, vehicle maintenance, registration, home/yard spending, and other recurring consumption. Separately modeled: health coverage and utilization, housing, home reserve, and vehicle purchases.</p>
+  </div>
+  <div class="card">
+    <h2>Healthcare transitions</h2>
+    <div class="sub">2026-dollar estimates: ${{ "{:,.0f}".format(assumptions.health_pre_medicare_monthly) }}/person/month pre-Medicare and ${{ "{:,.0f}".format(assumptions.health_medicare_monthly) }}/person/month on Medicare, inflated {{ "%.1f%%"|format(assumptions.healthcare_inflation * 100) }}. IRMAA uses projected MAGI from two years earlier.</div>
+    <table>
+      <tr><th class="lab">Year</th><th class="num">Ages</th><th class="num">Pre-Medicare</th><th class="num">Medicare + OOP</th><th class="num">IRMAA</th><th class="num">MAGI −2yr</th></tr>
+      {% for r in health_transitions %}<tr><td class="lab">{{ r.year }}</td><td class="num">{{ r.ages }}</td><td class="num">{{ r.pre }}</td><td class="num">{{ r.medicare }}</td><td class="num">{{ r.irmaa }}</td><td class="num">{{ r.magi_2yr }}</td></tr>{% endfor %}
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Annual retirement expenses</h2>
+  <div class="sub">Nominal dollars in the exact year incurred. Ages are primary / spouse. Taxes are shown for reconciliation but are not duplicated in the spending total.</div>
+  <details><summary>Show all retirement years</summary><div class="overx"><table>
+    <tr><th class="lab">Year</th><th class="num">Ages</th><th class="num">Lifestyle</th><th class="num">Healthcare</th><th class="num">Housing</th><th class="num">Home reserve</th><th class="num">Capital events</th><th class="num">Taxes</th><th class="num">Spending</th><th class="lab">Event</th></tr>
+    {% for r in annual_expenses %}<tr><td class="lab">{{ r.year }}</td><td class="num">{{ r.ages }}</td><td class="num">{{ r.lifestyle }}</td><td class="num">{{ r.healthcare }}</td><td class="num">{{ r.housing }}</td><td class="num">{{ r.home }}</td><td class="num">{{ r.capital }}</td><td class="num">{{ r.taxes }}</td><td class="num"><b>{{ r.total }}</b></td><td class="lab">{{ r.events }}</td></tr>{% endfor %}
+  </table></div></details>
+</div>
+
+{% if pj.scenarios.pessimistic.depleted_at %}
+<div class="card" style="border-left:3px solid var(--warn)">
+  <b>Pessimistic scenario depletes at age {{ pj.scenarios.pessimistic.depleted_at }}.</b>
+  <span class="sub">Base{% if pj.scenarios.base.depleted_at %} depletes at age {{ pj.scenarios.base.depleted_at }}{% else %} lasts to the horizon{% endif %};
+  sustainable spending is ${{ "{:,.0f}".format(pj.sustainable_monthly) }}/mo (today's dollars) vs ${{ "{:,.0f}".format(pj.desired_monthly) }}/mo desired.</span>
+</div>
+{% endif %}
+
+{{ chart_card(charts.mc) }}
+
+<div class="grid2">
+  <div class="card">
+    <h2>Monte Carlo outcome diagnostics</h2>
+    <table>
+      <tr><td class="lab">Finish with less than two years of spending</td><td class="num">{{ mc_metrics.near }}</td></tr>
+      <tr><td class="lab">Terminal assets — median / 10th pct</td><td class="num">{{ mc_metrics.terminal_median }} / {{ mc_metrics.terminal_p10 }}</td></tr>
+      <tr><td class="lab">Minimum liquid reserve — median / 10th pct</td><td class="num">{{ mc_metrics.reserve_median }} / {{ mc_metrics.reserve_p10 }}</td></tr>
+    </table>
+    {% if mc_metrics.depletion %}<p class="mut" style="margin:8px 0 0">First depletion age counts: {% for age, n in mc_metrics.depletion.items() %}{{ age }}: {{ n }}{% if not loop.last %}, {% endif %}{% endfor %}.</p>{% else %}<p class="mut" style="margin:8px 0 0">No simulated path depleted before the joint horizon.</p>{% endif %}
+  </div>
+  <div class="card">
+    <h2>Portfolio risk inputs</h2>
+    <div class="sub">Fund look-through plus direct holdings; unclassified holdings default to equity. Concentration adds idiosyncratic risk.</div>
+    <table>{% for r in risk_rows %}<tr><td class="lab">{{ r.name }}</td><td class="num">{{ r.value }}</td></tr>{% endfor %}
+      <tr><td class="lab">Largest position</td><td class="num">{{ risk_model.top_symbol or "—" }} {{ "%.1f%%"|format((risk_model.top_weight or 0) * 100) }}</td></tr>
+      <tr><td class="lab">Allocation volatility</td><td class="num">{{ "%.1f%%"|format((risk_model.base_stdev or 0) * 100) }}</td></tr>
+      <tr><td class="lab">Concentration penalty</td><td class="num">{{ "%.1f%%"|format((risk_model.concentration_penalty or risk_model.concentration or 0) * 100) }}</td></tr>
+    </table>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Deterministic stress cases</h2>
+  <div class="sub">These do not change the baseline; they expose specific failure modes. The combined case layers the return shock, high inflation, lower Social Security, and long-term care.</div>
+  <table><tr><th class="lab">Case</th><th class="num">First depletion</th><th class="num">Terminal assets</th><th class="num">Minimum liquid reserve</th></tr>
+    {% for r in stress_rows %}<tr><td class="lab">{{ r.name }}</td><td class="num">{{ r.depletion }}</td><td class="num">{{ r.terminal }}</td><td class="num">{{ r.reserve }}</td></tr>{% endfor %}
+  </table>
+</div>
+
+<div class="grid2">
+  {{ chart_card(charts.ss) }}
+  <div class="card">
+    <h2>Social Security detail</h2>
+    <div class="sub">Monthly benefit by claim age (today's dollars). FRA = 67.</div>
+    <div class="overx">
+    <table>
+      <tr><th class="lab">Claim age</th><th class="num">Your benefit</th><th class="num">Household (incl. spouse)</th></tr>
+      {% for r in ss_table %}
+      <tr><td class="lab">{{ r.age }}</td><td class="num">{{ r.monthly }}</td><td class="num">{{ r.household }}</td></tr>
+      {% endfor %}
+    </table>
+    </div>
+    <h3 style="margin-top:12px">Breakevens</h3>
+    <ul>
+      {% for b in ss.breakevens %}
+      <li>Claim {{ b.late }} vs {{ b.early }}: breakeven ~age {{ b.breakeven_age or "beyond horizon" }}</li>
+      {% endfor %}
+    </ul>
+    <h3 style="margin-top:12px">Spouse</h3>
+    <p class="sub" style="margin:2px 0 0">Own benefit at age {{ ss.spouse.claim_age }}: ${{ "{:,.0f}".format(ss.spouse.own_at_claim) }}/mo;
+      spousal top-up when the primary files: ${{ "{:,.0f}".format(ss.spouse.spousal_topup) }}/mo
+      (unreduced FRA excess ${{ "{:,.0f}".format(ss.spouse.spousal_topup_fra) }}). Combined after eligibility: <b>${{ "{:,.0f}".format(ss.spouse.total) }}/mo</b>. Modeled survivor benefit: <b>${{ "{:,.0f}".format(ss.survivor_monthly) }}/mo</b>.</p>
+    {% for n in ss.notes %}<p class="mut" style="margin:8px 0 0">{{ n }}</p>{% endfor %}
+  </div>
+</div>
+
+{% if charts.mortgage %}
+<div class="grid2">
+  {{ chart_card(charts.mortgage) }}
+  <div class="card">
+    <h2>Mortgage payoff strategies</h2>
+    <div class="sub">Remaining interest under each strategy.</div>
+    <div class="overx">
+    <table>
+      <tr><th class="lab">Strategy</th><th class="num">Payoff</th><th class="num">Interest left</th><th class="num">Interest saved</th></tr>
+      {% for s in mort.scenarios %}
+      <tr>
+        <td class="lab">{{ s.name }}</td>
+        <td class="num">{{ s.payoff_month }}</td>
+        <td class="num">${{ "{:,.0f}".format(s.total_interest_remaining) }}</td>
+        <td class="num">{% if s.interest_saved %}${{ "{:,.0f}".format(s.interest_saved) }}{% else %}—{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    </div>
+    {% for s in mort.scenarios %}{% if s.cash_required %}
+    <p class="sub" style="margin:10px 0 0">Lump-sum payoff at retirement requires <b>${{ "{:,.0f}".format(s.cash_required) }}</b> cash.</p>
+    {% endif %}{% endfor %}
+    <p class="mut" style="margin:8px 0 0">Paying down a 2.875% mortgage earns a guaranteed 2.875% before any tax effects. The portfolio return shown elsewhere is an uncertain expected return with drawdown risk; the two figures are not equivalent promises.</p>
+    <p class="mut" style="margin:8px 0 0">Escrow (taxes/insurance){% if mort.monthly_escrow %} of ${{ "{:,.0f}".format(mort.monthly_escrow) }}/mo{% endif %} continues after payoff — see the escrow breakdown below.</p>
+  </div>
+</div>
+{% endif %}
+
+{% if esc %}
+<div class="grid2">
+  <div class="card">
+    <h2>Escrow — property tax &amp; insurance</h2>
+    <div class="sub">From the servicer's escrow analysis{% if esc.effective %}, effective {{ esc.effective }}{% endif %}. These ride inside the monthly mortgage payment but <b>outlive the loan</b>.</div>
+    <table>
+      <tr><td class="lab">County property tax</td><td class="num">{{ esc.tax }}/yr</td></tr>
+      <tr><td class="lab">Hazard / homeowners insurance</td><td class="num">{{ esc.ins }}/yr</td></tr>
+      <tr><td class="lab"><b>Total escrow</b></td><td class="num"><b>{{ esc.total }}/yr ({{ esc.monthly }}/mo)</b></td></tr>
+      {% if esc.reserve %}<tr><td class="lab">Shortage/reserve spread over 12 months</td><td class="num">{{ esc.reserve }}/mo (temporary)</td></tr>{% endif %}
+    </table>
+  </div>
+  <div class="card">
+    <h2>Why escrow is modelled separately</h2>
+    <div class="sub">Property tax and insurance grow at very different rates, and neither stops when the mortgage does.</div>
+    <table>
+      <tr><td class="lab">Property tax growth (CA Prop 13 cap)</td><td class="num">{{ esc.tax_growth }}/yr</td></tr>
+      <tr><td class="lab">Insurance inflation assumption</td><td class="num">{{ esc.ins_growth }}/yr</td></tr>
+      <tr><td class="lab">Combined cost at retirement</td><td class="num">{{ esc.at_retire }}/yr</td></tr>
+      <tr><td class="lab">Combined cost at age {{ esc.horizon_age }}</td><td class="num">{{ esc.at_horizon }}/yr</td></tr>
+    </table>
+    <p class="mut" style="margin:10px 0 0">Prop 13 caps the assessed-value increase at 2%/yr, so the tax bill grows more slowly than general inflation. California homeowners insurance has been doing the opposite, so it carries a higher rate — a deliberately conservative assumption. Desired retirement spending excludes the whole mortgage payment; the projection adds P&amp;I until payoff and these two streams for life, so nothing is counted twice.</p>
+  </div>
+</div>
+{% endif %}
+
+<div class="grid2">
+  <div class="card">
+    <h2>Taxes — working vs retired</h2>
+    <table>
+      <tr><td class="lab">Effective rate now (incl. FICA)</td><td class="num">{{ tax_cards.now.effective }}</td></tr>
+      <tr><td class="lab">Marginal rate now (fed + CA)</td><td class="num">{{ tax_cards.now.marginal }}</td></tr>
+      <tr><td class="lab">Effective rate retired (example year)</td><td class="num">{{ tax_cards.ret.effective }}</td></tr>
+      <tr><td class="lab">SS federally taxable</td><td class="num">{{ tax_cards.ret.ss_pct }}</td></tr>
+      <tr><td class="lab">Medicare IRMAA tier (example year)</td><td class="num">{{ tax_cards.ret.irmaa }}</td></tr>
+    </table>
+    <p class="sub" style="margin:10px 0 0">{{ tax_cards.now.detail }}.</p>
+    <p class="sub" style="margin:6px 0 0">{{ tax_cards.ret.detail }}. California does not tax Social Security; it does tax 401(k)/IRA withdrawals and Roth conversions as ordinary income.</p>
+  </div>
+  <div class="card">
+    <h2>Key model assumptions</h2>
+    <table>
+      <tr><td class="lab">Risk profile / mean return</td><td class="num">{{ assumptions.risk }} · {{ "%.1f%%"|format(assumptions.mean_return * 100) }}{% if assumptions.fee_drag %} net{% endif %}</td></tr>
+      {% if assumptions.fee_drag %}
+      <tr><td class="lab">— less investment fees</td><td class="num">{{ "%.1f%%"|format(assumptions.mean_return_gross * 100) }} gross − {{ "%.2f%%"|format(assumptions.fee_drag * 100) }} fees</td></tr>
+      {% endif %}
+      <tr><td class="lab">Return volatility (σ)</td><td class="num">{{ "%.0f%%"|format(assumptions.stdev * 100) }}/yr</td></tr>
+      <tr><td class="lab">Inflation</td><td class="num">{{ "%.1f%%"|format(assumptions.inflation * 100) }}</td></tr>
+      <tr><td class="lab">Social Security COLA</td><td class="num">{{ "%.1f%%"|format(assumptions.cola * 100) }}</td></tr>
+      <tr><td class="lab">Healthcare inflation</td><td class="num">{{ "%.1f%%"|format(assumptions.healthcare_inflation * 100) }}</td></tr>
+      <tr><td class="lab">Home-capital reserve</td><td class="num">{{ "%.1f%%"|format(assumptions.home_reserve_pct * 100) }} of home value/yr</td></tr>
+      <tr><td class="lab">Planning horizon</td><td class="num">{{ assumptions.joint_horizon_year }} · younger spouse age {{ assumptions.younger_spouse_horizon_age }}</td></tr>
+    </table>
+    {% if assumptions.fee_drag %}
+    <p class="mut" style="margin:10px 0 0">Every projection here compounds a return already
+      net of investment costs: ${{ "{:,.0f}".format(assumptions.fee_drag_detail.advisory) }}/yr
+      of advisory fees measured from the charges on your statements plus
+      ${{ "{:,.0f}".format(assumptions.fee_drag_detail.funds) }}/yr of fund
+      expense ratios, against a ${{ "{:,.0f}".format(assumptions.fee_drag_detail.base) }}
+      portfolio. Those come out whatever the market does.</p>
+    {% endif %}
+    <p class="mut" style="margin:10px 0 0">Withdrawal order: HSA first for qualified healthcare, then taxable → tax-deferred → Roth. HSA has no RMD; deferred withdrawals are ordinary income; Roth is tax-free; taxable withdrawals recognize only pro-rata gains when basis is supplied. Unknown basis is conservatively treated as fully taxable. Brackets, deductions, and IRMAA thresholds are indexed from their base year.</p>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Recommendations</h2>
+  <div class="sub">Rule-based, computed from your numbers — a starting agenda, not financial advice.</div>
+  {% for r in recs %}
+  <div class="rec {{ r.severity }}">
+    <h3>{{ r.title }}<span class="sev {{ r.severity }}">{{ r.severity }}</span></h3>
+    <p>{{ r.detail }}</p>
+  </div>
+  {% endfor %}
+</div>
+
+<footer class="mut">Personal finance dashboard · all data local (finance_data/, gitignored) ·
+deterministic model + Monte Carlo, estimates only — not tax, legal, or investment advice.
+Verify {{ tax_year }} tax constants in finance/taxdata.py.</footer>
+</div>
+
+<div id="tt" role="status"></div>
+
+<script>
+(function () {
+  var btn = document.getElementById('theme-btn');
+  var stored = localStorage.getItem('dash-theme');
+  if (stored) document.documentElement.setAttribute('data-theme', stored);
+  btn.addEventListener('click', function () {
+    var cur = document.documentElement.getAttribute('data-theme');
+    var dark = cur ? cur === 'dark'
+      : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    var next = dark ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('dash-theme', next);
+  });
+
+  var tt = document.getElementById('tt');
+
+  function showTip(slot, cx, cy) {
+    tt.textContent = '';
+    var lab = document.createElement('div');
+    lab.className = 't-label';
+    lab.textContent = slot.label;
+    tt.appendChild(lab);
+    slot.items.forEach(function (it) {
+      var row = document.createElement('div');
+      row.className = 't-row';
+      var key = document.createElement('span');
+      key.className = 't-key';
+      key.style.background = it[2] || 'transparent';
+      var val = document.createElement('span');
+      val.className = 't-val';
+      val.textContent = it[1];
+      var name = document.createElement('span');
+      name.className = 't-name';
+      name.textContent = it[0];
+      row.appendChild(key); row.appendChild(val); row.appendChild(name);
+      tt.appendChild(row);
+    });
+    tt.style.display = 'block';
+    var w = tt.offsetWidth, h = tt.offsetHeight;
+    var x = cx + 14, y = cy - h - 10;
+    if (x + w > window.innerWidth - 8) x = cx - w - 14;
+    if (y < 8) y = cy + 14;
+    tt.style.left = x + 'px';
+    tt.style.top = Math.max(8, y) + 'px';
+  }
+  function hideTip() { tt.style.display = 'none'; }
+
+  document.querySelectorAll('.chart').forEach(function (card) {
+    var svg = card.querySelector('svg');
+    var dataEl = card.querySelector('script.chart-data');
+    if (!svg || !dataEl) return;
+    var d = JSON.parse(dataEl.textContent);
+    var ch = svg.querySelector('.crosshair');
+    var focusIdx = -1;
+
+    function activate(i, clientX, clientY) {
+      i = Math.max(0, Math.min(d.slots.length - 1, i));
+      var cx = d.x0 + i * d.step;
+      if (ch) {
+        ch.setAttribute('x1', cx); ch.setAttribute('x2', cx);
+        ch.style.opacity = 1;
+      }
+      var r = svg.getBoundingClientRect();
+      var px = r.left + cx * r.width / d.vbw;
+      showTip(d.slots[i], clientX != null ? clientX : px,
+              clientY != null ? clientY : r.top + r.height / 2);
+      return i;
+    }
+    function deactivate() {
+      if (ch) ch.style.opacity = 0;
+      hideTip();
+      focusIdx = -1;
+    }
+
+    svg.addEventListener('pointermove', function (e) {
+      var r = svg.getBoundingClientRect();
+      var x = (e.clientX - r.left) * d.vbw / r.width;
+      if (x < d.x0 - d.step / 2 || x > d.x0 + (d.slots.length - 0.5) * d.step) {
+        deactivate(); return;
+      }
+      activate(Math.round((x - d.x0) / d.step), e.clientX, e.clientY);
+    });
+    svg.addEventListener('pointerleave', deactivate);
+
+    svg.setAttribute('tabindex', '0');
+    svg.setAttribute('role', 'img');
+    svg.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight') { focusIdx = activate(focusIdx + 1); e.preventDefault(); }
+      else if (e.key === 'ArrowLeft') { focusIdx = activate(focusIdx <= 0 ? 0 : focusIdx - 1); e.preventDefault(); }
+      else if (e.key === 'Escape') deactivate();
+    });
+    svg.addEventListener('blur', deactivate);
+  });
+})();
+</script>
+</body>
+</html>

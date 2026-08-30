@@ -1,0 +1,152 @@
+{
+  "version": 2,
+  "_note": "The HAND-ENTERED half of the sample household -- exactly what a person types into the intake form, and nothing a document could supply. Accounts that appear in samples/documents/positions.csv are deliberately absent: extract.py adds those, which is the point of the demo. samples/profile.json is this file after the pipeline has run over the sample documents; regenerate it with samples/build_profile.py.",
+  "household": {
+    "self_birthdate": "1978-04-12",
+    "spouse_birthdate": "1979-09-30",
+    "state": "CA",
+    "filing_status": "mfj",
+    "retirement_date": "2040-06"
+  },
+  "income": {
+    "salary_annual": 185000,
+    "pay_frequency": "biweekly",
+    "k401_pct": 10,
+    "employer_match_pct": 4,
+    "employer_match_annual": 7400,
+    "other_pretax_annual": 6000,
+    "spouse_income_annual": 95000
+  },
+  "social_security": {
+    "self": {
+      "62": 2480,
+      "67": 3540,
+      "70": 4390
+    },
+    "spouse": {
+      "62": 1610,
+      "67": 2300,
+      "70": 2850
+    },
+    "spouse_source": "spouse-social-security-statement.pdf",
+    "spouse_own_monthly_fra": 2300,
+    "claim_age_self": 67,
+    "claim_age_spouse": 67,
+    "cola": 0.025,
+    "compare_claim_ages": [
+      62,
+      67,
+      70
+    ]
+  },
+  "mortgage": {
+    "balance": 268000,
+    "rate": 0.035,
+    "pi_payment": 2180,
+    "escrow_payment": 780,
+    "next_due": "2026-09",
+    "maturity": "2038-04",
+    "extra_monthly": 0,
+    "escrow_detail": {
+      "property_tax_annual": 6900,
+      "insurance_annual": 2460,
+      "total_annual": 9360,
+      "reserve_monthly": 780,
+      "shortage": 0,
+      "effective_date": "2026-07"
+    }
+  },
+  "home": {
+    "value": 780000
+  },
+  "assets": [
+    {
+      "name": "HSA",
+      "type": "hsa",
+      "balance": 48000,
+      "annual_contribution": 4400
+    },
+    {
+      "name": "Savings / emergency fund",
+      "type": "cash",
+      "balance": 60000,
+      "annual_contribution": 0
+    }
+  ],
+  "liabilities": [
+    {
+      "name": "Mortgage",
+      "balance": 268000,
+      "rate": 0.035,
+      "payment_monthly": 2960
+    },
+    {
+      "name": "Auto loan",
+      "balance": 18400,
+      "rate": 0.0599,
+      "payment_monthly": 540
+    }
+  ],
+  "spending": {
+    "current_monthly": 11350,
+    "retirement_monthly_today": 7600,
+    "observed_medical_monthly": 380,
+    "_note": "retirement_monthly_today excludes mortgage P&I and escrow; the projection adds those separately until the loan matures. Observed recurring medical is removed before explicit retirement healthcare is added, so it is never counted twice."
+  },
+  "payroll_detail": {
+    "_note": "Normally read from a pay stub PDF. The sample set ships CSV exports only (hand-built PDFs prove nothing about real ones), so these are stated here instead. They are what let the 401(k) audit cross-check the deferral rate.",
+    "k401_current": 711.54,
+    "k401_ytd": 10673.1,
+    "k401_match_current": 284.62,
+    "base_salary_current": 7115.38,
+    "base_salary_ytd": 106730.7,
+    "gross_ytd": 112400.0,
+    "pay_frequency": "biweekly",
+    "periods_per_year": 26,
+    "history": []
+  },
+  "equity_comp": {
+    "symbol": null,
+    "price_manual": 118.5,
+    "_price_note": "The sample employer is fictional, so a stated price stands in for a live quote -- the same thing you would do for a private-company award with a 409A valuation and no ticker. Set equity_comp.symbol to a real ticker to price vests from the market instead.",
+    "enabled": true,
+    "include_conditional": true
+  },
+  "healthcare": {
+    "enabled": true,
+    "source_year": 2026,
+    "pre_medicare_monthly_per_person": 1850,
+    "medicare_monthly_per_person": 700,
+    "inflation": 0.06
+  },
+  "capital_expenses": {
+    "home_reserve_pct": 0.01,
+    "home_reserve_inflation": 0.035,
+    "home_reserve_start": "retirement",
+    "schedules": [
+      {
+        "id": "vehicle-replacement",
+        "name": "Vehicle replacement",
+        "amount_today": 45000,
+        "first_date": "2040-06",
+        "interval_years": 10,
+        "inflation": null,
+        "end_year": null,
+        "enabled": true
+      }
+    ]
+  },
+  "assumptions": {
+    "risk": "moderate",
+    "inflation": 0.025,
+    "horizon_age": 95,
+    "return_override": null,
+    "compare_claim_ages": [
+      62,
+      67,
+      70
+    ],
+    "monte_carlo_paths": 10000,
+    "taxable_basis_unknown_is_gain": true
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "code": "MI",
+  "name": "Michigan",
+  "tax_year": 2026,
+  "source": "Michigan flat income tax rate, estimated for 2026. Verify with the state revenue department.",
+  "kind": "flat",
+  "rate": 0.0425,
+  "estimate": true,
+  "taxes_social_security": false,
+  "taxes_retirement_income": "full",
+  "index_brackets": false,
+  "local_tax_note": "Michigan is phasing in a retirement-income deduction that is not modeled here."
+}

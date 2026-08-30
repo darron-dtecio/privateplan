@@ -1,0 +1,194 @@
+{% extends "_base.html.j2" %}
+{% block title %}Intake — Personal Finance{% endblock %}
+{% block heading %}Profile intake &amp; review{% endblock %}
+{% block subheading %}<a href="/finance">← finance workspace</a> ·
+values prefilled from your documents are flagged
+<span class="badge" style="color:var(--s2);border-color:var(--s2)">verify</span>
+until you save{% endblock %}
+
+{% block content %}
+<style>
+.fgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 4px 20px; }
+.fld label { margin: 12px 0 4px; }
+.fld .hint { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+select { width: 100%; background: var(--page); color: var(--ink);
+  border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; font: inherit; }
+input[type=number], input[type=date], input[type=month] { width: 100%; background: var(--page);
+  color: var(--ink); border: 1px solid var(--border); border-radius: 8px;
+  padding: 7px 10px; font: inherit; }
+input.review { border-color: var(--s2); box-shadow: 0 0 0 1px var(--s2); }
+.rowtable input, .rowtable select { padding: 5px 8px; }
+.rowtable td { padding: 4px 6px 4px 0; border-bottom: none; }
+.rowtable th { padding-right: 6px; }
+.addrow { margin-top: 8px; }
+</style>
+
+<form method="post" action="/finance/intake">
+  {% for title, fields in sections %}
+  <div class="card">
+    <h2>{{ title }}</h2>
+    <div class="fgrid">
+      {% for name, label, kind, default in fields %}
+      {% set v = values.get(name, default) %}
+      {% set r = review.get(name) %}
+      <div class="fld">
+        <label for="{{ name }}">{{ label }}
+          {% if r and r.flag %}<span class="badge" style="color:var(--s2);border-color:var(--s2)">verify — from {{ r.src }}</span>
+          {% elif r %}<span class="badge ok">from {{ r.src }}</span>{% endif %}
+        </label>
+        {% if kind.startswith("select:") %}
+        <select id="{{ name }}" name="{{ name }}">
+          {% for opt in kind[7:].split(",") %}
+          {% set val = opt.split("|")[0] %}
+          {% set text = opt.split("|")[-1] %}
+          <option value="{{ val }}" {{ "selected" if (v | string) == val }}>{{ text }}</option>
+          {% endfor %}
+        </select>
+        {% elif kind == "date" %}
+        <input type="date" id="{{ name }}" name="{{ name }}" value="{{ v }}">
+        {% elif kind == "month" %}
+        <input type="month" id="{{ name }}" name="{{ name }}" value="{{ v }}">
+        {% else %}
+        <input type="number" step="any" id="{{ name }}" name="{{ name }}" value="{{ v }}"
+               {% if r and r.flag %}class="review"{% endif %}>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+
+  <div class="card">
+    <h2>Assets — retirement &amp; investment accounts</h2>
+    <p class="sub">Balances aren't on paystubs — enter them from your account statements.
+    Candidates found in your workbooks are prefilled below; fix names/types/amounts freely.</p>
+    <div class="overx">
+    <table class="rowtable" id="assets">
+      <tr><th>Account name</th><th>Type</th><th>Balance ($)</th><th>Tax basis ($, taxable only)</th><th>Annual contribution ($)*</th><th></th></tr>
+      {% for a in assets %}
+      <tr>
+        <td><input type="hidden" name="asset_source" value="{{ a.source or 'user' }}">
+            <input type="text" name="asset_name" value="{{ a.name or '' }}"></td>
+        <td><select name="asset_type">
+          {% for t in asset_types %}<option value="{{ t }}" {{ "selected" if a.type == t }}>{{ t }}</option>{% endfor %}
+        </select></td>
+        <td><input type="number" step="any" name="asset_balance" value="{{ a.balance or '' }}"></td>
+        <td><input type="number" step="any" name="asset_basis" value="{{ a.cost_basis if a.cost_basis is not none else '' }}"></td>
+        <td><input type="number" step="any" name="asset_contrib" value="{{ a.annual_contribution if a.annual_contribution is not none else 0 }}"></td>
+        <td><button type="button" class="ghost delrow">✕</button></td>
+      </tr>
+      {% endfor %}
+    </table>
+    </div>
+    <button type="button" class="ghost addrow" data-table="assets">+ add account</button>
+    <p class="mut" style="margin:8px 0 0">* Leave the 401(k) row's contribution at 0 — it's computed
+    from your salary and 401(k) % above (including catch-up limits by age).</p>
+  </div>
+
+  <div class="card">
+    <h2>Scheduled capital expenses</h2>
+    <p class="sub">Amounts are net costs in today's dollars. Fuel, maintenance, and registration stay in recurring spending.</p>
+    <div class="overx">
+    <table class="rowtable" id="schedules">
+      <tr><th>Name</th><th>Amount ($)</th><th>First month</th><th>Repeat (years)</th><th>Inflation (%)</th><th>End year</th><th></th></tr>
+      {% for s in schedules %}
+      <tr>
+        <td><input type="hidden" name="schedule_id" value="{{ s.id or '' }}"><input type="text" name="schedule_name" value="{{ s.name or '' }}"></td>
+        <td><input type="number" step="any" name="schedule_amount" value="{{ s.amount_today or '' }}"></td>
+        <td><input type="month" name="schedule_first_date" value="{{ s.first_date or '' }}"></td>
+        <td><input type="number" step="1" name="schedule_interval" value="{{ s.interval_years or '' }}"></td>
+        <td><input type="number" step="any" name="schedule_inflation" value="{{ (s.inflation * 100) | round(2) if s.inflation is not none else '' }}"></td>
+        <td><input type="number" step="1" name="schedule_end_year" value="{{ s.end_year or '' }}"></td>
+        <td><button type="button" class="ghost delrow">✕</button></td>
+      </tr>
+      {% endfor %}
+    </table>
+    </div>
+    <button type="button" class="ghost addrow" data-table="schedules">+ add scheduled expense</button>
+  </div>
+
+  <div class="card">
+    <h2>Other debts</h2>
+    <div class="overx">
+    <table class="rowtable" id="liabs">
+      <tr><th>Name</th><th>Balance ($)</th><th>Rate (%)</th><th>Payment/mo ($)</th><th></th></tr>
+      {% for l in liabilities if l.name != "Mortgage" %}
+      <tr>
+        <td><input type="hidden" name="liab_source" value="{{ l.source or 'user' }}">
+            <input type="text" name="liab_name" value="{{ l.name or '' }}"></td>
+        <td><input type="number" step="any" name="liab_balance" value="{{ l.balance or '' }}"></td>
+        <td><input type="number" step="any" name="liab_rate" value="{{ (l.rate * 100) | round(3) if l.rate else '' }}"></td>
+        <td><input type="number" step="any" name="liab_payment" value="{{ l.payment_monthly or '' }}"></td>
+        <td><button type="button" class="ghost delrow">✕</button></td>
+      </tr>
+      {% endfor %}
+    </table>
+    </div>
+    <button type="button" class="ghost addrow" data-table="liabs">+ add debt</button>
+    <p class="mut" style="margin:8px 0 0">The mortgage above is added as a liability automatically.</p>
+  </div>
+
+  <div class="card">
+    <div class="btnrow">
+      <button type="submit">Save profile</button>
+      <a class="btn ghost" href="/finance" style="text-decoration:none;color:var(--ink2);background:var(--surface);border:1px solid var(--border)">Cancel</a>
+    </div>
+    <p class="mut" style="margin:8px 0 0">Saves to finance_data/profile.json (local, gitignored). Then run Analyze → Render.</p>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  function bindDel(btn) {
+    btn.addEventListener('click', function () { btn.closest('tr').remove(); });
+  }
+  document.querySelectorAll('.delrow').forEach(bindDel);
+  document.querySelectorAll('.addrow').forEach(function (add) {
+    add.addEventListener('click', function () {
+      var table = document.getElementById(add.dataset.table);
+      var rows = table.querySelectorAll('tr');
+      var tmpl = rows.length > 1 ? rows[1] : null;
+      var tr;
+      if (tmpl) {
+        tr = tmpl.cloneNode(true);
+        tr.querySelectorAll('input').forEach(function (i) {
+          // a hand-added row is user-owned, never auto-managed
+          if (i.name === 'asset_source' || i.name === 'liab_source') { i.value = 'user'; return; }
+          i.value = i.name.endsWith('contrib') ? 0 : '';
+        });
+      } else {
+        tr = document.createElement('tr');
+        if (add.dataset.table === 'assets') {
+          tr.innerHTML = '<td><input type="hidden" name="asset_source" value="user">' +
+            '<input type="text" name="asset_name"></td>' +
+            '<td><select name="asset_type">{% for t in asset_types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}</select></td>' +
+            '<td><input type="number" step="any" name="asset_balance"></td>' +
+            '<td><input type="number" step="any" name="asset_basis"></td>' +
+            '<td><input type="number" step="any" name="asset_contrib" value="0"></td>' +
+            '<td><button type="button" class="ghost delrow">✕</button></td>';
+        } else if (add.dataset.table === 'liabs') {
+          tr.innerHTML = '<td><input type="hidden" name="liab_source" value="user">' +
+            '<input type="text" name="liab_name"></td>' +
+            '<td><input type="number" step="any" name="liab_balance"></td>' +
+            '<td><input type="number" step="any" name="liab_rate"></td>' +
+            '<td><input type="number" step="any" name="liab_payment"></td>' +
+            '<td><button type="button" class="ghost delrow">✕</button></td>';
+        } else {
+          tr.innerHTML = '<td><input type="hidden" name="schedule_id" value=""><input type="text" name="schedule_name"></td>' +
+            '<td><input type="number" step="any" name="schedule_amount"></td>' +
+            '<td><input type="month" name="schedule_first_date"></td>' +
+            '<td><input type="number" step="1" name="schedule_interval"></td>' +
+            '<td><input type="number" step="any" name="schedule_inflation"></td>' +
+            '<td><input type="number" step="1" name="schedule_end_year"></td>' +
+            '<td><button type="button" class="ghost delrow">✕</button></td>';
+        }
+      }
+      table.appendChild(tr);
+      tr.querySelectorAll('.delrow').forEach(bindDel);
+    });
+  });
+})();
+</script>
+{% endblock %}

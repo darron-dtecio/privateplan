@@ -1,0 +1,42 @@
+{
+  "code": "CA", "name": "California", "tax_year": 2026,
+  "source": "FTB 2025 tax rate schedules, indexed. Verify at ftb.ca.gov.",
+  "kind": "brackets",
+  "estimate": true,
+  "filing_status": {
+    "mfj": {
+      "brackets": [[22108, 0.01], [52420, 0.02], [82734, 0.04], [114850, 0.06],
+                   [145158, 0.08], [741508, 0.093], [889808, 0.103],
+                   [1483012, 0.113], [null, 0.123]],
+      "standard_deduction": 11540
+    },
+    "single": {
+      "brackets": [[11054, 0.01], [26210, 0.02], [41367, 0.04], [57425, 0.06],
+                   [72579, 0.08], [370754, 0.093], [444904, 0.103],
+                   [741506, 0.113], [null, 0.123]],
+      "standard_deduction": 5770
+    },
+    "hoh": {
+      "brackets": [[22116, 0.01], [52422, 0.02], [67590, 0.04], [83644, 0.06],
+                   [98779, 0.08], [504044, 0.093], [604959, 0.103],
+                   [1008264, 0.113], [null, 0.123]],
+      "standard_deduction": 11540
+    },
+    "mfs": {
+      "brackets": [[11054, 0.01], [26210, 0.02], [41367, 0.04], [57425, 0.06],
+                   [72579, 0.08], [370754, 0.093], [444904, 0.103],
+                   [741506, 0.113], [null, 0.123]],
+      "standard_deduction": 5770
+    }
+  },
+  "taxes_social_security": false,
+  "taxes_retirement_income": "full",
+  "surtaxes": [
+    {"name": "Mental Health Services Tax", "threshold": 1000000, "rate": 0.01}
+  ],
+  "property_tax_growth": 0.02,
+  "property_tax_growth_note": "Proposition 13 caps assessed-value growth at 2%/yr, so property tax rises more slowly than general inflation.",
+  "insurance_inflation": 0.06,
+  "insurance_inflation_note": "California homeowners premiums have risen far faster than CPI.",
+  "index_brackets": true
+}

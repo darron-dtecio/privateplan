@@ -1,0 +1,13 @@
+{
+  "code": "UT",
+  "name": "Utah",
+  "tax_year": 2026,
+  "source": "Utah flat income tax rate, estimated for 2026. Verify with the state revenue department.",
+  "kind": "flat",
+  "rate": 0.0455,
+  "estimate": true,
+  "taxes_social_security": true,
+  "taxes_retirement_income": "full",
+  "index_brackets": false,
+  "local_tax_note": "Utah offers a retirement credit that is not modeled here."
+}
